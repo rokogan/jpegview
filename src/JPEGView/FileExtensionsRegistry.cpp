@@ -35,7 +35,12 @@ static bool GetRegistryStringValue(HKEY key, LPCTSTR name, CString & outValue) {
 	DWORD size = buffsize * sizeof(TCHAR);
 	bool bOk = RegQueryValueEx(key, name, NULL, &type, (LPBYTE)&buff, &size) == ERROR_SUCCESS;
 	bOk = bOk && (type == REG_SZ || type == REG_EXPAND_SZ);
-	if (bOk) outValue = buff;
+	if (bOk) {
+		DWORD nChars = size / sizeof(TCHAR);
+		if (nChars >= buffsize) nChars = buffsize - 1;
+		buff[nChars] = 0;
+		outValue = buff;
+	}
 	return bOk;
 }
 
@@ -426,7 +431,7 @@ static RegResult ResetPermissionsForRegistryKey(LPCTSTR subKeyRelativeToHKCU)
 					if (::GetAce(pACL, i, (LPVOID*)&pace))
 					{
 						// Build the new ACL but exclude the access denied ACEs
-						if (!pace->Header.AceType == ACCESS_DENIED_ACE_TYPE) {
+						if (pace->Header.AceType != ACCESS_DENIED_ACE_TYPE) {
 							::AddAce(pDacl, ACL_REVISION, MAXDWORD, pace, ((PACE_HEADER)pace)->AceSize);
 						}
 					}

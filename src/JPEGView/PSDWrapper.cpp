@@ -216,7 +216,7 @@ CJPEGImage* PsdReader::ReadImage(LPCTSTR strFileName, bool& bOutOfMemory)
 			switch (nResourceID) {
 				case 0x040F: // ICC Profile
 					if (nColorMode == MODE_RGB) {
-						pICCProfile = new(std::nothrow) char[nResourceSize];
+						if (nResourceSize <= MAX_PSD_FILE_SIZE) pICCProfile = new(std::nothrow) char[nResourceSize];
 					}
 					if (pICCProfile != NULL) {
 						ReadFromFile(pICCProfile, hFile, nResourceSize);

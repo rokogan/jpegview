@@ -62,6 +62,7 @@ CCropCtl::CCropCtl(CMainDlg* pMainDlg) {
 	m_cropEnd = CPoint(INT_MIN, INT_MIN);
 	m_cropMouse = CPoint(INT_MIN, INT_MIN);
 	m_startTrackMousePos = CPoint(INT_MIN, INT_MIN);
+	m_dLastZoom = 0.0;
 }
 
 
@@ -116,7 +117,6 @@ void CCropCtl::OnPaint(CPaintDC& dc) {
 			m_dLastZoom = dZoom;
 			if (m_eCropMode == CM_FixedSize && CCropSizeDlg::UseScreenPixels()) {
 				CSize cropSize = CCropSizeDlg::GetCropSize();
-				double dZoom = m_pMainDlg->GetZoom();
 				if (dZoom < 0.0) {
 					dZoom = (double)m_pMainDlg->VirtualImageSize().cx/m_pMainDlg->GetCurrentImage()->OrigWidth();
 				}

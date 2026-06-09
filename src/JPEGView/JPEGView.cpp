@@ -116,7 +116,9 @@ static Helpers::ETransitionEffect ParseCommandLineForSlideShowEffect(LPCTSTR sCo
 	if (sEffect == NULL) {
 		return (Helpers::ETransitionEffect)(-1);
 	}
-	sEffect = sEffect + _tcslen(_T("/effect")) + 1;
+	sEffect = sEffect + _tcslen(_T("/effect"));
+	if (*sEffect == 0) return (Helpers::ETransitionEffect)(-1);
+	sEffect++;
 	LPCTSTR posSpace = _tcschr(sEffect, _T(' '));
 	CString effect = (posSpace == NULL) ? CString(sEffect) : CString(sEffect, (int)(posSpace - sEffect));
 	return Helpers::ConvertTransitionEffectFromString(effect);

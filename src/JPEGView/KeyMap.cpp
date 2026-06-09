@@ -133,9 +133,9 @@ static CString _GetKeyShortcutName(int nShortcut) {
 	int nRealShortcut = nShortcut & 0xFF;
 	for (int i = 0; i < NUM_KEYS; i++) {
 		if (KeyTable[i].KeyCode == nRealShortcut) {
-			if (KeyTable[i].Name == _T("Plus")) {
+			if (_tcscmp(KeyTable[i].Name, _T("Plus")) == 0) {
 				sKeyDesc += _T("+");
-			} else if (KeyTable[i].Name == _T("Minus")) {
+			} else if (_tcscmp(KeyTable[i].Name, _T("Minus")) == 0) {
 				sKeyDesc += _T("-");
 			} else {
 				sKeyDesc += KeyTable[i].Name;

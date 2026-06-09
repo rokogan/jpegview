@@ -246,6 +246,7 @@ CMainDlg::CMainDlg(bool bForceFullScreen) {
 	CHistogramCorr::SetContrastCorrectionStrength((float)sp.AutoContrastAmount());
 	CHistogramCorr::SetBrightnessCorrectionStrength((float)sp.AutoBrightnessAmount());
 
+	m_pDirectoryWatcher = NULL;
 	m_pFileList = NULL;
 	m_pJPEGProvider = NULL;
 	m_pCurrentImage = NULL;
@@ -333,6 +334,7 @@ CMainDlg::~CMainDlg() {
 	delete m_pFileList;
 	if (m_pJPEGProvider != NULL) delete m_pJPEGProvider;
 	delete m_pImageProcParams;
+	delete m_pImageProcParams2;
 	delete m_pImageProcParamsKept;
 	delete m_pZoomNavigatorCtl;
 	delete m_pCropCtl;
@@ -769,7 +771,7 @@ LRESULT CMainDlg::OnGetMinMaxInfo(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lPara
 LRESULT CMainDlg::OnAnotherInstanceStarted(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& bHandled) {
 	bHandled = FALSE;
 	COPYDATASTRUCT* pData = (COPYDATASTRUCT*)lParam;
-	if (pData != NULL && pData->dwData == KEY_MAGIC && pData->cbData > 0 && 
+	if (pData != NULL && pData->dwData == KEY_MAGIC && pData->cbData >= sizeof(TCHAR) && pData->cbData % sizeof(TCHAR) == 0 &&
 		((m_bFullScreenMode && CSettingsProvider::This().SingleFullScreenInstance()) || CSettingsProvider::This().SingleInstance())) {
 		m_sStartupFile = CString((LPCTSTR)pData->lpData, pData->cbData / sizeof(TCHAR) - 1);
 		::PostMessage(m_hWnd, WM_LOAD_FILE_ASYNCH, 0, KEY_MAGIC);
@@ -3470,7 +3472,7 @@ bool CMainDlg::UseSlideShowTransitionEffect() {
 
 void CMainDlg::AnimateTransition() {
 
-	int nFrameTimeMs = (m_eTransitionEffect >= Helpers::TE_RollLR || m_eTransitionEffect <= Helpers::TE_ScrollBT) ? 10 : 20;
+	int nFrameTimeMs = (m_eTransitionEffect >= Helpers::TE_RollRL && m_eTransitionEffect <= Helpers::TE_ScrollBT) ? 10 : 20;
 
 	// paint to memory DC
 	int nW = m_clientRect.Width(), nH = m_clientRect.Height();

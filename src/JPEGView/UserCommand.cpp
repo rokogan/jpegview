@@ -68,8 +68,9 @@ static CString ReplacePlaceholders(CString sMsg, LPCTSTR sFileName, const CRect&
 	CString sNewMsg = sMsg;
 
 	if (bUseShortFileName) {
-		::GetShortPathName(sFileName, (LPTSTR)&buffer, BUFFER_LEN);
-		sFileName = (LPCTSTR)&buffer;
+		DWORD nLen = ::GetShortPathName(sFileName, (LPTSTR)&buffer, BUFFER_LEN);
+		if (nLen > 0 && nLen < BUFFER_LEN)
+			sFileName = (LPCTSTR)&buffer;
 	}
 
 	if (!selectionRect.IsRectNull()) {

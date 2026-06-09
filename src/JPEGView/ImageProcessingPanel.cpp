@@ -147,7 +147,7 @@ void CImageProcessingPanel::RepositionAll() {
 	int nSliderIdx = 0;
 	int nTotalSliderIdx = 0;
 	int nSliderEndX = 0;
-	int nXButtonStart, nXButton2Start;
+	int nXButtonStart = nXStart, nXButton2Start = nXStart;
 	CSliderDouble* pSliderColumn[3];
 	ControlsIterator iter;
 	for (iter = m_controls.begin( ); iter != m_controls.end( ); iter++ ) {

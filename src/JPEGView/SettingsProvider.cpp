@@ -690,7 +690,7 @@ LPCTSTR CSettingsProvider::ReadGlobalIniString(LPCTSTR key) {
 LPCTSTR CSettingsProvider::ReadIniString(LPCTSTR key, LPCTSTR fileName, IniHashMap*& keyMap, TCHAR*& pBuffer) {
 	if (keyMap == NULL) {
 		keyMap = new IniHashMap();
-		ReadIniFile(m_sIniNameUser, keyMap, pBuffer);
+		ReadIniFile(fileName, keyMap, pBuffer);
 	}
 	hash_map<LPCTSTR, LPCTSTR, CHashCompareLPCTSTR>::const_iterator iter;
 	iter = keyMap->find(key);

@@ -74,7 +74,7 @@ CJPEGImage::CJPEGImage(int nWidth, int nHeight, void* pPixels, void* pEXIFData, 
 	} else if (nChannels == 1) {
 		m_pOrigPixels = CBasicProcessing::Convert1To4Channels(nWidth, nHeight, pPixels);
 		delete[] pPixels;
-		m_nOriginalChannels = 4;
+		m_nOriginalChannels = (m_pOrigPixels == NULL) ? 0 : 4;
 	} else {
 		assert(false);
 		m_pOrigPixels = NULL;
@@ -146,13 +146,13 @@ CJPEGImage::CJPEGImage(int nWidth, int nHeight, void* pPixels, void* pEXIFData, 
 	m_bTrapezoidValid = false;
 
 	// Create the LDC object on the image
-	m_pLDC = (pLDC == NULL) ? (new CLocalDensityCorr(*this, true)) : pLDC;
+	m_pLDC = (m_pOrigPixels == NULL) ? NULL : ((pLDC == NULL) ? (new CLocalDensityCorr(*this, true)) : pLDC);
 	m_bLDCOwned = pLDC == NULL;
-	if (nJPEGHash == 0) {
+	if (nJPEGHash == 0 && m_pLDC != NULL) {
 		// Use the decompressed pixel hash in this case
 		m_nPixelHash = m_pLDC->GetPixelHash();
 	}
-	m_fLightenShadowFactor = (1.0f - m_pLDC->GetHistogram()->IsNightShot())*(1.0f - m_pLDC->IsSunset());
+	m_fLightenShadowFactor = (m_pLDC == NULL) ? 1.0f : (1.0f - m_pLDC->GetHistogram()->IsNightShot())*(1.0f - m_pLDC->IsSunset());
 
 	// Initialize to INI value, may be overriden later by parameter DB
 	memcpy(m_fColorCorrectionFactors, CSettingsProvider::This().ColorCorrectionAmounts(), sizeof(m_fColorCorrectionFactors));

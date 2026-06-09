@@ -291,6 +291,7 @@ CEXIFReader::CEXIFReader(void* pApp1Block, EImageFormat eImageFormat)
 	}
 	int nApp1Size = m_pApp1[2]*256 + m_pApp1[3] + 2;
 	uint8* pApp1End = m_pApp1 + nApp1Size; // one past the last valid byte of the APP1 block
+	if (nApp1Size < 18) return;
 
 	// Read TIFF header
 	uint8* pTIFFHeader = m_pApp1 + 10;
@@ -449,7 +450,7 @@ CEXIFReader::CEXIFReader(void* pApp1Block, EImageFormat eImageFormat)
 				uint8* pSOI = pTIFFHeader + nOffsetSOI;
 				uint8* pSOF = ((long long)nOffsetSOI + 10 + nJPEGBytes <= nApp1Size) ?
 					(uint8*) Helpers::FindJPEGMarker(pSOI, nJPEGBytes, 0xC0) : NULL;
-				if (pSOF != NULL) {
+				if (pSOF != NULL && pSOF + 9 <= pApp1End) {
 					m_nThumbWidth = pSOF[7]*256 + pSOF[8];
 					m_nThumbHeight = pSOF[5]*256 + pSOF[6];
 					m_nJPEGThumbStreamLen = nJPEGBytes;

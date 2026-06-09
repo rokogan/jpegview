@@ -332,7 +332,7 @@ int CBatchCopyDlg::CreateItemList() {
 }
 
 CString CBatchCopyDlg::GetPatternText() {
-	TCHAR strPattern[MAX_PATH];
+	TCHAR strPattern[MAX_PATH + 1];
 	((short*)strPattern)[0] = MAX_PATH;
 	int numChars = m_edtPattern.GetLine(0, strPattern);
 	strPattern[numChars] = 0;

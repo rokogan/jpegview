@@ -47,7 +47,7 @@ HBITMAP CPaintMemDCMgr::PrepareRectForMemDCPainting(CDC & memDC, CDC & paintDC, 
 	memDCBitmap.CreateCompatibleBitmap(paintDC, rect.Width(), rect.Height());
 	memDC.SelectBitmap(memDCBitmap);
 	memDC.FillRect(CRect(0, 0, rect.Width(), rect.Height()), backBrush);
-	return memDCBitmap.m_hBitmap;
+	return memDCBitmap.Detach();
 }
 
 // Blits the DIB data section to target DC using dimming (blending with a black bitmap)

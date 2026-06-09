@@ -29,6 +29,8 @@ bool JxlReader::DecodeJpegXlOneShot(const uint8_t* jxl, size_t size, std::vector
 	int& ysize, bool& have_animation, int& frame_count, int& frame_time, std::vector<uint8_t>* icc_profile, bool& outOfMemory) {
 
 	if (cache.decoder.get() == NULL) {
+		cache.data = (uint8_t*)jxl;
+		cache.data_size = size;
 		cache.runner = JxlResizableParallelRunnerMake(nullptr);
 
 		cache.decoder = JxlDecoderMake(nullptr);
@@ -53,8 +55,6 @@ bool JxlReader::DecodeJpegXlOneShot(const uint8_t* jxl, size_t size, std::vector
 
 		JxlDecoderSetInput(cache.decoder.get(), jxl, size);
 		JxlDecoderCloseInput(cache.decoder.get());
-		cache.data = (uint8_t*)jxl;
-		cache.data_size = size;
 	}
 
 	JxlBasicInfo info;

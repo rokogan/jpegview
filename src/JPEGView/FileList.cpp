@@ -859,11 +859,12 @@ bool CFileList::TryReadingSlideShowList(const CString & sSlideShowFile) {
 	}
 	// Try to detect if this is a UTF16 Unicode text file or a ANSI or UTF-8 coded file
 	const int NUMPROBE = 64;
-	uint8 buff[NUMPROBE];
+	uint8 buff[NUMPROBE + 1];
 	bool bUnicode;
 	bool bUTF8Marker = false;
 	int nSeekPos = 0;
 	int nRealProbe = (int)fread(buff, 1, NUMPROBE, fptr);
+	buff[nRealProbe] = 0;
 	if (nRealProbe < 16) {
 		// file is too short for a good guess
 		bUnicode = false;

@@ -28,6 +28,9 @@ void * HeifReader::ReadImage(int &width,
 	heif::ImageHandle handle = context.get_image_handle(item_id);
 	// height = handle.get_height();
 	// width = handle.get_width();
+	int prew = handle.get_width(); int preh = handle.get_height();
+	if (prew > MAX_IMAGE_DIMENSION || preh > MAX_IMAGE_DIMENSION) return NULL;
+	if ((double)prew * preh > MAX_IMAGE_PIXELS) { outOfMemory = true; return NULL; }
 	heif::Image image = handle.decode_image(heif_colorspace_RGB, heif_chroma_interleaved_RGBA);
 	int stride;
 	uint8_t* data = image.get_plane(heif_channel_interleaved, &stride);

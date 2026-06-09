@@ -36,7 +36,7 @@ public:
 
 private:
 	int GetLineSize() const { return m_nPaddedWidth*2; }
-	int GetMemSize() const { return GetLineSize()*3*m_nPaddedHeight; }
+	size_t GetMemSize() const { return (size_t)GetLineSize()*3*m_nPaddedHeight; }
 	void Init(int nWidth, int nHeight, bool bPadHeight, int padding);
 
 	void* m_pMemory;

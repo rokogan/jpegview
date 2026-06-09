@@ -12,7 +12,7 @@ CTooltip::CTooltip(HWND hWnd, const CUICtrl* pBoundCtrl, LPCTSTR sTooltip) :
 }
 
 CTooltip::CTooltip(HWND hWnd, const CUICtrl* pBoundCtrl, TooltipHandler ttHandler, void* pContext) :
-	m_hWnd(hWnd), m_pBoundCtrl(pBoundCtrl), m_TooltipRect(0, 0, 0, 0) {
+	m_hWnd(hWnd), m_pBoundCtrl(pBoundCtrl), m_TooltipRect(0, 0, 0, 0), m_oldRectBoundCtrl(0, 0, 0, 0) {
 	m_ttHandler = ttHandler;
 	m_pContext = pContext;
 }
@@ -76,13 +76,11 @@ CTooltipMgr::CTooltipMgr(HWND hWnd) {
 	m_hWnd = hWnd;
 	m_pActiveTooltip = NULL;
 	m_pMouseOnTooltip = NULL;
-	m_pBlockedTooltip = NULL;
 	m_bEnableTooltips = true;
 }
 
 void CTooltipMgr::OnMouseLButton(EMouseEvent eMouseEvent, int nX, int nY) {
 	if (eMouseEvent == MouseEvent_BtnDown) {
-		m_pBlockedTooltip = m_pMouseOnTooltip;
 		RemoveActiveTooltip();
 	}
 }
@@ -99,7 +97,6 @@ void CTooltipMgr::OnMouseMove(int nX, int nY) {
 		}
 	}
 	if (pMouseOnTooltip != m_pMouseOnTooltip) {
-		m_pBlockedTooltip = NULL; // unblock showing tooltips when leaving current control
 		RemoveActiveTooltip();
 		m_pMouseOnTooltip = pMouseOnTooltip;
 		m_pActiveTooltip = pMouseOnTooltip;

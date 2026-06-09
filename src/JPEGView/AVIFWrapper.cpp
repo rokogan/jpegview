@@ -76,11 +76,13 @@ void* AvifReader::ReadImage(int& width,
 
 	width = cache.rgb.width;
 	height = cache.rgb.height;
+	if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) { DeleteCache(); return NULL; }
+	if ((double)width * height > MAX_IMAGE_PIXELS) { outOfMemory = true; DeleteCache(); return NULL; }
 	has_animation = cache.decoder->imageCount > 1;
 	frame_count = cache.decoder->imageCount;
 	frame_time = (int)(cache.decoder->imageTiming.duration * 1000.0);
 
-	size_t size = width * nchannels * height;
+	size_t size = (size_t)width * nchannels * height;
 	cache.rgb.pixels = new(std::nothrow) unsigned char[size];
 	if (cache.rgb.pixels == NULL) {
 		outOfMemory = true;

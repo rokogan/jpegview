@@ -64,8 +64,9 @@ void* CXMMImage::ConvertToDIBRGBA() const {
 	if (m_pMemory == NULL) {
 		return NULL;
 	}
-	uint8* pDIB = new uint8[m_nWidth*4 * m_nHeight];
-	
+	uint8* pDIB = new(std::nothrow) uint8[(size_t)m_nWidth * 4 * m_nHeight];
+	if (pDIB == NULL) return NULL;
+
 	uint16* pSrc = (uint16*) m_pMemory;
 	uint8* pDst = pDIB;
 	for (int j = 0; j < m_nHeight; j++) {
@@ -100,7 +101,7 @@ void CXMMImage::Init(int nWidth, int nHeight, bool bPadHeight, int padding) {
 	}
 	m_nWidth = nWidth;
 	m_nHeight = nHeight;
-	int nMemSize = GetMemSize();
+	size_t nMemSize = GetMemSize();
 
 	// Allocate memory aligned on page boundaries
 	m_pMemory = ::VirtualAlloc(

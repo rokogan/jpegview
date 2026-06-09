@@ -76,7 +76,6 @@ private:
 	HWND m_hWnd;
 	CTooltip* m_pActiveTooltip;
 	CTooltip* m_pMouseOnTooltip;
-	CTooltip* m_pBlockedTooltip;
 	std::list<CTooltip*> m_TooltipList;
 	bool m_bEnableTooltips;
 };

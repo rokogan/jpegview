@@ -62,7 +62,8 @@ CSize CHelpDisplay::GetSize() {
 	std::list<TextLine>::iterator iter;
 	for (iter = m_lines.begin( ); iter != m_lines.end( ); iter++ ) {
 		CSize size;
-		m_dc.GetTextExtent(iter->Key, (int)_tcslen(iter->Key), &size);
+		LPCTSTR key = iter->Key ? iter->Key : _T("");
+		m_dc.GetTextExtent(key, (int)_tcslen(key), &size);
 		m_nSizeX = max(m_nSizeX, size.cx);
 		if (m_nIncY == 0) m_nIncY = size.cy;
 		m_nSizeY += m_nIncY;
@@ -101,11 +102,12 @@ void CHelpDisplay::Show() {
 		m_dc.FillRect(CRect(fullRect.left, nStartY, fullRect.right, nStartY + m_nIncY),
 			((nI++ & 1) == 0) ? brushBk1 : brushBk2);
 
-		int nKeyLen = (int)_tcslen(iter->Key);
+		LPCTSTR key = iter->Key ? iter->Key : _T("");
+		int nKeyLen = (int)_tcslen(key);
 		m_dc.SetTextColor(iter->Color);
-		m_dc.TextOut(nStartX, nStartY, iter->Key, nKeyLen);
+		m_dc.TextOut(nStartX, nStartY, key, nKeyLen);
 		CSize textLenKey;
-		m_dc.GetTextExtent(iter->Key, nKeyLen, &textLenKey);
+		m_dc.GetTextExtent(key, nKeyLen, &textLenKey);
 		if (iter->Info != NULL) {
 			m_dc.SetTextColor(iter->ColorInfo);
 			m_dc.TextOut(max(nStartX + m_nTab1, nStartX + textLenKey.cx + 2), nStartY, iter->Info, (int)_tcslen(iter->Info));
@@ -137,5 +139,5 @@ LPCTSTR CHelpDisplay::CopyStr(LPCTSTR str) {
 
 void CHelpDisplay::AddTextLine(COLORREF color, COLORREF colorinfo, LPCTSTR key, LPCTSTR info, LPCTSTR help) {
 	m_nSizeX = 0;
-	m_lines.push_back(TextLine(color, colorInfo, CopyStr(key), CopyStr(info), CopyStr(help)));
+	m_lines.push_back(TextLine(color, colorinfo, CopyStr(key), CopyStr(info), CopyStr(help)));
 }

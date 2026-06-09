@@ -40,7 +40,7 @@ CJPEGImage* RawReader::ReadImage(LPCTSTR strFileName, bool& bOutOfMemory, bool b
 
 		int stride = Helpers::DoPadding(width * colors, 4);
 		
-		pPixelData = new(std::nothrow) unsigned char[stride * height];
+		pPixelData = new(std::nothrow) unsigned char[(size_t)stride * height];
 		if (pPixelData == NULL) {
 			bOutOfMemory = true;
 			return NULL;

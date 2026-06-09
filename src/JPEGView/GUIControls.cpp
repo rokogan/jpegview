@@ -503,6 +503,7 @@ CSliderDouble::CSliderDouble(CPanel* pPanel, LPCTSTR sName, int nSliderLen, doub
 	m_dMin = bLogarithmic ? log10(dMin) : dMin;;
 	m_dMax = bLogarithmic ? log10(dMax) : dMax;
 	m_dDefaultValue = dDefaultValue;
+	m_dSavedValue = m_dDefaultValue;
 	m_sliderRect = CRect(0, 0, 0, 0);
 	m_checkRect = CRect(0, 0, 0, 0);
 	m_checkRectFull = CRect(0, 0, 0, 0);

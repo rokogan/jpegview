@@ -311,7 +311,7 @@ private:
 	CString m_sGPSMapProvider;
 	bool m_bFlashWindowAlert;
 	bool m_bBeepSoundAlert;
-	int m_zoomPauseFactor;
+	double m_zoomPauseFactor;
 	bool m_bWindowBorderlessOnStartup;
 	bool m_bWindowAlwaysOnTopOnStartup;
 

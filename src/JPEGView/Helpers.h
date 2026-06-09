@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ImageProcessingTypes.h"
+#include "MaxImageDef.h"
 
 class CJPEGImage;
 class CFileList;
@@ -87,7 +88,7 @@ namespace Helpers {
 
 	// this is specified all over the code as the maximum image dimension that one side can be
 	// this particular variable will have limited usage, but is used to reflect that limitation.  DO NOT CHANGE
-	const int MAX_IMAGE_DIMENSION = 65535;
+	const int MAX_IMAGE_DIMENSION = (int)::MAX_IMAGE_DIMENSION;
 
 	// Round to integer
 	inline int RoundToInt(double d) {

@@ -12,7 +12,9 @@ namespace SetDesktopWallpaper {
 		HKEY key;
 		if (RegOpenKeyEx(HKEY_CURRENT_USER, _T("Control Panel\\Desktop"), 0, KEY_READ | KEY_WRITE, &key) != ERROR_SUCCESS)
 			return false;
-		return RegSetValueEx(key, name, 0, REG_SZ, (const BYTE *)stringValue, ((int)_tcslen(stringValue) + 1) * sizeof(TCHAR)) == ERROR_SUCCESS;
+		bool ok = RegSetValueEx(key, name, 0, REG_SZ, (const BYTE *)stringValue, ((int)_tcslen(stringValue) + 1) * sizeof(TCHAR)) == ERROR_SUCCESS;
+		RegCloseKey(key);
+		return ok;
 	}
 
 	void SetFileAsWallpaper(CJPEGImage& image, LPCTSTR fileName)

@@ -11,24 +11,28 @@ static void CopyOriginalFileNameToClipboard(LPCWSTR filename) {
 	DWORD fileNameLengthBytes = sizeof(wchar_t) * (fileNameLength + 1);
 	DROPFILES df = {sizeof(DROPFILES), {0, 0}, 0, TRUE};
 	HGLOBAL hMem = ::GlobalAlloc(GMEM_ZEROINIT|GMEM_MOVEABLE|GMEM_DDESHARE, sizeof(DROPFILES) + fileNameLengthBytes + sizeof(wchar_t)); // for double NULL char
+	if (hMem == NULL) return;
 	int offset = sizeof(DROPFILES) / sizeof(wchar_t);
 	WCHAR *pGlobal = (WCHAR *) ::GlobalLock(hMem);
+	if (pGlobal == NULL) { ::GlobalFree(hMem); return; }
 	::CopyMemory(pGlobal, &df, sizeof(DROPFILES));
 	::CopyMemory(pGlobal + offset, filename, fileNameLengthBytes); // that's pGlobal + 20 bytes (the size of DROPFILES);
 	pGlobal[offset + fileNameLength + 1] = 0; // add additional NULL character
 	::GlobalUnlock(hMem);
-	::SetClipboardData(CF_HDROP, hMem);
+	if (::SetClipboardData(CF_HDROP, hMem) == NULL) ::GlobalFree(hMem);
 }
 
 static void CopyFileNameTextToClipboard(LPCWSTR filename) {
 	int fileNameLength = (int)wcslen(filename);
 	DWORD fileNameLengthBytes = sizeof(wchar_t) * (fileNameLength + 1);
 	HGLOBAL hMem = ::GlobalAlloc(GMEM_ZEROINIT | GMEM_MOVEABLE | GMEM_DDESHARE, fileNameLengthBytes + sizeof(wchar_t)); // for double NULL char
+	if (hMem == NULL) return;
 	WCHAR* pGlobal = (WCHAR*) ::GlobalLock(hMem);
+	if (pGlobal == NULL) { ::GlobalFree(hMem); return; }
 	::CopyMemory(pGlobal, filename, fileNameLengthBytes);
 	pGlobal[fileNameLength + 1] = 0; // add additional NULL character
 	::GlobalUnlock(hMem);
-	::SetClipboardData(CF_UNICODETEXT, hMem);
+	if (::SetClipboardData(CF_UNICODETEXT, hMem) == NULL) ::GlobalFree(hMem);
 }
 
 void CClipboard::CopyImageToClipboard(HWND hWnd, CJPEGImage * pImage, LPCTSTR fileName) {
@@ -92,7 +96,7 @@ CJPEGImage* CClipboard::PasteImageFromClipboard(HWND hWnd, const CImageProcessin
 			}
 			char* pDIBBits = (char*)pbmInfo + pbmInfo->bmiHeader.biSize + nNumColors*sizeof(RGBQUAD);
 
-			if (pbmInfo->bmiHeader.biWidth <= MAX_IMAGE_DIMENSION && abs(pbmInfo->bmiHeader.biHeight) <= MAX_IMAGE_DIMENSION) {
+			if (pbmInfo->bmiHeader.biWidth >= 0 && pbmInfo->bmiHeader.biWidth <= MAX_IMAGE_DIMENSION && abs(pbmInfo->bmiHeader.biHeight) <= MAX_IMAGE_DIMENSION) {
 				Gdiplus::Bitmap* pBitmap = new Gdiplus::Bitmap(pbmInfo, pDIBBits);
 				if (pBitmap->GetLastStatus() == Gdiplus::Ok) {
 					Gdiplus::Rect bmRect(0, 0, pBitmap->GetWidth(), pBitmap->GetHeight());
@@ -133,7 +137,8 @@ void CClipboard::DoCopy(HWND hWnd, int nWidth, int nHeight, const void* pSourceI
 		::CloseClipboard();
 		return;
 	}
-	void* pMemory = ::GlobalLock(hMem); 
+	void* pMemory = ::GlobalLock(hMem);
+	if (pMemory == NULL) { ::GlobalFree(hMem); ::CloseClipboard(); return; }
 
 	BITMAPINFO* pBMInfo = (BITMAPINFO*) pMemory;
 	memset(pBMInfo, 0, sizeof(BITMAPINFO));
@@ -151,8 +156,8 @@ void CClipboard::DoCopy(HWND hWnd, int nWidth, int nHeight, const void* pSourceI
 	uint8* pDIBPixelsTarget = (uint8*)pMemory + sizeof(BITMAPINFO) - sizeof(RGBQUAD);
 	CBasicProcessing::Convert32bppTo24bppDIB(nWidth, nHeight, pDIBPixelsTarget, pSourceImageDIB32, true);
 
-	::GlobalUnlock(hMem); 
-	::SetClipboardData(CF_DIB, hMem);
+	::GlobalUnlock(hMem);
+	if (::SetClipboardData(CF_DIB, hMem) == NULL) ::GlobalFree(hMem);
 
 	if (fileName != NULL) {
 		CopyOriginalFileNameToClipboard(fileName);

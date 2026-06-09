@@ -42,8 +42,7 @@ CDirectoryWatcher::~CDirectoryWatcher(void) {
 	::CloseHandle(m_newDirectoryEvent);
 }
 
-void CDirectoryWatcher::Terminate() { 
-	m_bTerminate = true;
+void CDirectoryWatcher::Terminate() {
 	if (m_hThread != NULL) {
 		::SetEvent(m_terminateEvent);
 		::WaitForSingleObject(m_hThread, 1000);

@@ -1389,6 +1389,7 @@ void CLASS ppm_thumb (CJPEGImage** Image, bool& bOutOfMemory)
 
     thumb_length = thumb_width*thumb_height*3;
     thumb = (byte *) malloc (thumb_length);
+    if (thumb == NULL) { bOutOfMemory = true; return; }
     fread(thumb, 1, thumb_length, ifp);
     bOutOfMemory = false;
 
@@ -1404,7 +1405,7 @@ void CLASS ppm_thumb (CJPEGImage** Image, bool& bOutOfMemory)
         {
             byte *p = data + i * pwidth + 2;
             byte *pm = p + thumb_width * 3;
-            byte *d = thumb + i * pwidth;
+            byte *d = thumb + i * (thumb_width * 3);
 
             while (p < pm)
             {
@@ -1471,7 +1472,7 @@ void CLASS ppm16_thumb(CJPEGImage** Image, bool& bOutOfMemory)
     {
         byte* p = data + i * pwidth + 2;
         byte* pm = p + thumb_width * 3;
-        byte* d = thumb + i * pwidth;
+        byte* d = thumb + i * (thumb_width * 3);
 
         while (p < pm)
         {
