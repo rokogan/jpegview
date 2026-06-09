@@ -98,6 +98,48 @@ namespace HelpersGUI {
 
 	float ScreenScaling = -1.0f;
 
+	bool IsSystemInDarkMode() {
+		// Windows 10 1809+ exposes the app theme here; AppsUseLightTheme == 0 means dark.
+		DWORD nLightTheme = 1; // default to light if the value is missing (e.g. older Windows)
+		HKEY hKey;
+		if (::RegOpenKeyEx(HKEY_CURRENT_USER,
+			_T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"),
+			0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+			DWORD nData = 1, cbData = sizeof(nData);
+			if (::RegQueryValueEx(hKey, _T("AppsUseLightTheme"), NULL, NULL, (LPBYTE)&nData, &cbData) == ERROR_SUCCESS)
+				nLightTheme = nData;
+			::RegCloseKey(hKey);
+		}
+		return nLightTheme == 0;
+	}
+
+	void ApplyModernWindowChrome(HWND hWnd) {
+		// Dark/light immersive title bar (Win10 2004+) and rounded corners (Win11), following the OS theme.
+		// DwmSetWindowAttribute is loaded dynamically so there is no hard dependency on dwmapi and the call
+		// degrades to a harmless no-op on older Windows (unknown attributes just return a failure HRESULT).
+		typedef HRESULT (WINAPI *DwmSetWindowAttributeFn)(HWND, DWORD, LPCVOID, DWORD);
+		static DwmSetWindowAttributeFn pDwmSetWindowAttribute = NULL;
+		static bool bResolved = false;
+		if (!bResolved) {
+			bResolved = true;
+			HMODULE hDwm = ::LoadLibrary(_T("dwmapi.dll"));
+			if (hDwm != NULL)
+				pDwmSetWindowAttribute = (DwmSetWindowAttributeFn)::GetProcAddress(hDwm, "DwmSetWindowAttribute");
+		}
+		if (pDwmSetWindowAttribute == NULL)
+			return;
+
+		BOOL bDark = IsSystemInDarkMode();
+		const DWORD DWMWA_USE_IMMERSIVE_DARK_MODE = 20;        // 19 on early Win10 20H1 insider builds
+		const DWORD DWMWA_USE_IMMERSIVE_DARK_MODE_OLD = 19;
+		const DWORD DWMWA_WINDOW_CORNER_PREFERENCE = 33;       // Win11
+		const DWORD DWMWCP_ROUND = 2;
+		if (pDwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &bDark, sizeof(bDark)) != S_OK)
+			pDwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE_OLD, &bDark, sizeof(bDark));
+		DWORD nCornerPref = DWMWCP_ROUND;
+		pDwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, &nCornerPref, sizeof(nCornerPref));
+	}
+
 	HFONT DefaultGUIFont = NULL;
 	HFONT SystemFont = NULL;
 	HFONT DefaultFileNameFont = NULL;

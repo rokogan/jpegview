@@ -29,6 +29,13 @@ namespace HelpersGUI {
 	// Scales a pixel value given in 96 DPI to screen pixels, taking the screen DPI into account
 	int ScaleToScreen(int value);
 
+	// Returns true if the OS is currently using a dark app theme (Windows 10 1809+).
+	bool IsSystemInDarkMode();
+
+	// Applies modern, OS-following window chrome (dark/light immersive title bar + Win11 rounded
+	// corners). Safe no-op on older Windows. Call once the window handle is valid.
+	void ApplyModernWindowChrome(HWND hWnd);
+
 	// Creates a bold version of the font that is currently selected in the given DC.
 	// The caller is responsible for deleting the returned font when no longer used.
 	HFONT CreateBoldFontOfSelectedFont(CDC & dc);
