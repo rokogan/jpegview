@@ -65,6 +65,10 @@ static const double GAMMA_FACTOR = 1.02; // multiplicator for gamma value
 static const double CONTRAST_INC = 0.03; // increment for contrast value
 static const double SHARPEN_INC = 0.05; // increment for sharpen value
 static const double LDC_INC = 0.1; // increment for LDC (lighten shadows and darken highlights)
+// Number of readahead threads. MUST remain 1: the format decoders (PngReader, JxlReader,
+// AvifReader, WebP, etc.) keep per-codec state in class-static caches that are NOT thread-safe.
+// A single load thread serializes all decodes; raising this would let two threads decode
+// concurrently and race / double-free that shared cache state.
 static const int NUM_THREADS = 1; // number of readahead threads to use
 static const int READ_AHEAD_BUFFERS = 2; // number of readahead buffers to use (NUM_THREADS+1 is a good choice)
 static const int ZOOM_TIMEOUT = 200; // refinement done after this many milliseconds

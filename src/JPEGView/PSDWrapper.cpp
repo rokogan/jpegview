@@ -378,7 +378,7 @@ CJPEGImage* PsdReader::ReadImage(LPCTSTR strFileName, bool& bOutOfMemory)
 #ifdef DEBUG
 					if (p != pOffset) {
 						WCHAR buf[100];
-						swprintf(buf, _T("Misaligned scan line bytes (%+d) for channel %d row %d\n"), p - pOffset, channel, row);
+						swprintf(buf, _T("Misaligned scan line bytes (%+d) for channel %d row %d\n"), (int)(p - pOffset), (int)channel, (int)row);
 						::OutputDebugString(buf);
 					}
 #endif
