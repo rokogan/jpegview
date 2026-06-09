@@ -102,7 +102,7 @@ CJPEGImage* CReaderTGA::ReadTgaImage(LPCTSTR strFileName, COLORREF backgroundCol
 	// check memory footprint
 	int targetChannels = (bits == 32) ? 4 : 3;
 	int targetStride = Helpers::DoPadding(width * targetChannels, 4);
-	uint32 numberOfBytesRequired = targetStride * height;
+	size_t numberOfBytesRequired = (size_t)targetStride * height;
 
 	if ((double)width * height > MAX_IMAGE_PIXELS)
 	{

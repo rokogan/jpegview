@@ -324,7 +324,7 @@ int16* CBasicProcessing::Create1Channel16bppGrayscaleImage(int nWidth, int nHeig
 		LUTs[512 + i] = (uint32)(0.114 * i * cdScaler + 0.5);
 	}
 
-	int16* pNewImage = new(std::nothrow) int16[nWidth * nHeight];
+	int16* pNewImage = new(std::nothrow) int16[(size_t)nWidth * nHeight];
 	if (pNewImage == NULL) return NULL;
 	int nPadSrc = Helpers::DoPadding(nWidth*nChannels, 4) - nWidth*nChannels;
 	int16* pTarget = pNewImage;
@@ -344,7 +344,7 @@ void* CBasicProcessing::Apply3ChannelLUT32bpp(int nWidth, int nHeight, const voi
 		return NULL;
 	}
 
-	uint32* pTarget = new(std::nothrow) uint32[nWidth * nHeight];
+	uint32* pTarget = new(std::nothrow) uint32[(size_t)nWidth * nHeight];
 	if (pTarget == NULL) return NULL;
 	const uint32* pSrc = (uint32*)pDIBPixels;
 	uint32* pTgt = pTarget;
@@ -366,7 +366,7 @@ void* CBasicProcessing::ApplySaturationAnd3ChannelLUT32bpp(int nWidth, int nHeig
 
 	const int cnScaler = 1 << 16;
 	const int cnMax = 255 * cnScaler;
-	uint32* pTarget = new(std::nothrow) uint32[nWidth * nHeight];
+	uint32* pTarget = new(std::nothrow) uint32[(size_t)nWidth * nHeight];
 	if (pTarget == NULL) return NULL;
 	const uint32* pSrc = (uint32*)pDIBPixels;
 	uint32* pTgt = pTarget;
@@ -587,9 +587,9 @@ static void RotateBlock32bpp(const uint32* pSrc, uint32* pTgt, int nWidth, int n
 							 int nXStart, int nYStart, int nBlockWidth, int nBlockHeight, bool bCW) {
 	int nIncTargetLine = nHeight;
 	int nIncSource = nWidth - nBlockWidth;
-	const uint32* pSource = pSrc + nWidth * nYStart + nXStart;
-	uint32* pTarget = bCW ? pTgt + nIncTargetLine * nXStart + (nHeight - 1 - nYStart) :
-		pTgt + nIncTargetLine * (nWidth - 1 - nXStart) + nYStart;
+	const uint32* pSource = pSrc + (size_t)nWidth * nYStart + nXStart;
+	uint32* pTarget = bCW ? pTgt + (size_t)nIncTargetLine * nXStart + (nHeight - 1 - nYStart) :
+		pTgt + (size_t)nIncTargetLine * (nWidth - 1 - nXStart) + nYStart;
 	uint32* pStartYPtr = pTarget;
 	if (!bCW) nIncTargetLine = -nIncTargetLine;
 	int nIncStartYPtr = bCW ? -1 : +1;
@@ -608,12 +608,12 @@ static void RotateBlock32bpp(const uint32* pSrc, uint32* pTgt, int nWidth, int n
 
 // 180 degrees rotation
 static void* Rotate32bpp180(int nWidth, int nHeight, const void* pDIBPixels) {
-	uint32* pTarget = new(std::nothrow) uint32[nWidth * nHeight];
+	uint32* pTarget = new(std::nothrow) uint32[(size_t)nWidth * nHeight];
 	if (pTarget == NULL) return NULL;
 	const uint32* pSource = (uint32*)pDIBPixels;
 	for (uint32 i = 0; i < nHeight; i++) {
-		uint32* pTgt = pTarget + nWidth*(nHeight - 1 - i) + (nWidth - 1);
-		const uint32* pSrc = pSource + nWidth*i;
+		uint32* pTgt = pTarget + (size_t)nWidth*(nHeight - 1 - i) + (nWidth - 1);
+		const uint32* pSrc = pSource + (size_t)nWidth*i;
 		for (uint32 j = 0; j < nWidth; j++) {
 			*pTgt = *pSrc;
 			pTgt -= 1;
@@ -633,7 +633,7 @@ void* CBasicProcessing::Rotate32bpp(int nWidth, int nHeight, const void* pDIBPix
 		return Rotate32bpp180(nWidth, nHeight, pDIBPixels);
 	}
 
-	uint32* pTarget = new(std::nothrow) uint32[nHeight * nWidth];
+	uint32* pTarget = new(std::nothrow) uint32[(size_t)nHeight * nWidth];
 	if (pTarget == NULL) return NULL;
 	const uint32* pSource = (uint32*)pDIBPixels;
 
@@ -660,11 +660,11 @@ void* CBasicProcessing::Mirror32bpp(int nWidth, int nHeight, const void* pDIBPix
 }
 
 void* CBasicProcessing::MirrorH32bpp(int nWidth, int nHeight, const void* pDIBPixels) {
-	uint32* pTarget = new(std::nothrow) uint32[nWidth * nHeight];
+	uint32* pTarget = new(std::nothrow) uint32[(size_t)nWidth * nHeight];
 	if (pTarget == NULL) return NULL;
 	uint32* pTgt = pTarget;
 	for (int j = 0; j < nHeight; j++) {
-		const uint32* pSource = (uint32*)pDIBPixels + (j + 1) * nWidth - 1;
+		const uint32* pSource = (uint32*)pDIBPixels + (size_t)(j + 1) * nWidth - 1;
 		for (int i = 0; i < nWidth; i++) {
 			*pTgt = *pSource;
 			pTgt++; pSource--;
@@ -674,11 +674,11 @@ void* CBasicProcessing::MirrorH32bpp(int nWidth, int nHeight, const void* pDIBPi
 }
 
 void* CBasicProcessing::MirrorV32bpp(int nWidth, int nHeight, const void* pDIBPixels) {
-	uint32* pTarget = new(std::nothrow) uint32[nWidth * nHeight];
+	uint32* pTarget = new(std::nothrow) uint32[(size_t)nWidth * nHeight];
 	if (pTarget == NULL) return NULL;
 	uint32* pTgt = pTarget;
 	for (int j = 0; j < nHeight; j++) {
-		const uint32* pSource = (uint32*)pDIBPixels + (nHeight - 1 - j) * nWidth;
+		const uint32* pSource = (uint32*)pDIBPixels + (size_t)(nHeight - 1 - j) * nWidth;
 		for (int i = 0; i < nWidth; i++) {
 			*pTgt = *pSource;
 			pTgt++; pSource++;
@@ -718,7 +718,7 @@ void* CBasicProcessing::Convert8bppTo32bppDIB(int nWidth, int nHeight, const voi
 	}
 	int nPaddedWidthS = Helpers::DoPadding(nWidth, 4);
 	int nPadS = nPaddedWidthS - nWidth;
-	uint32* pNewDIB = new(std::nothrow) uint32[nWidth * nHeight];
+	uint32* pNewDIB = new(std::nothrow) uint32[(size_t)nWidth * nHeight];
 	if (pNewDIB == NULL) return NULL;
 	uint32* pTargetDIB = pNewDIB;
 	const uint8* pSourceDIB = (uint8*)pDIBPixels;
@@ -762,7 +762,7 @@ void* CBasicProcessing::Convert1To4Channels(int nWidth, int nHeight, const void*
 		return NULL;
 	}
 	int nPadSrc = Helpers::DoPadding(nWidth, 4) - nWidth;
-	uint32* pNewDIB = new(std::nothrow) uint32[nWidth * nHeight];
+	uint32* pNewDIB = new(std::nothrow) uint32[(size_t)nWidth * nHeight];
 	if (pNewDIB == NULL) return NULL;
 	uint32* pTarget = pNewDIB;
 	const uint8* pSource = (uint8*)pPixels;
@@ -777,7 +777,7 @@ void* CBasicProcessing::Convert1To4Channels(int nWidth, int nHeight, const void*
 }
 
 void* CBasicProcessing::Convert16bppGrayTo32bppDIB(int nWidth, int nHeight, const int16* pPixels) {
-	uint32* pNewDIB = new(std::nothrow) uint32[nWidth * nHeight];
+	uint32* pNewDIB = new(std::nothrow) uint32[(size_t)nWidth * nHeight];
 	if (pNewDIB == NULL) return NULL;
 	uint32* pTarget = pNewDIB;
 	const int16* pSource = pPixels;
@@ -796,7 +796,7 @@ void* CBasicProcessing::Convert3To4Channels(int nWidth, int nHeight, const void*
 		return NULL;
 	}
 	int nPadSrc = Helpers::DoPadding(nWidth*3, 4) - nWidth*3;
-	uint32* pNewDIB = new(std::nothrow) uint32[nWidth * nHeight];
+	uint32* pNewDIB = new(std::nothrow) uint32[(size_t)nWidth * nHeight];
 	if (pNewDIB == NULL) return NULL;
 	uint32* pTarget = pNewDIB;
 	const uint8* pSource = (uint8*)pIJLPixels;
@@ -814,7 +814,7 @@ void* CBasicProcessing::ConvertGdiplus32bppRGB(int nWidth, int nHeight, int nStr
 	if (pGdiplusPixels == NULL || nWidth*4 > abs(nStride)) {
 		return NULL;
 	}
-	uint32* pNewDIB = new(std::nothrow) uint32[nWidth * nHeight];
+	uint32* pNewDIB = new(std::nothrow) uint32[(size_t)nWidth * nHeight];
 	if (pNewDIB == NULL) return NULL;
 	uint32* pTgt = pNewDIB;
 	const uint8* pSrc = (const uint8*)pGdiplusPixels;
@@ -839,7 +839,7 @@ void* CBasicProcessing::CopyRect32bpp(void* pTarget, const void* pSource,  CSize
 	uint32* pSourceDIB = (uint32*)pSource;
 	uint32* pTargetDIB = (uint32*)pTarget;
 	if (pTargetDIB == NULL) {
-		pTargetDIB = new(std::nothrow) uint32[targetSize.cx * targetSize.cy];
+		pTargetDIB = new(std::nothrow) uint32[(size_t)targetSize.cx * targetSize.cy];
 		if (pTargetDIB == NULL) return NULL;
 		pTarget = pTargetDIB;
 	}
@@ -1560,7 +1560,7 @@ static void ApplyFilter1C16bpp(int nSourceWidth, int nTargetWidth,
 							   const int16* pSource, int16* pTarget) {
 
 	for (int j = 0; j < nRunY; j++) {
-		const int16* pSourcePixelLine = pSource + nStartX + nSourceWidth * (j + nStartY);
+		const int16* pSourcePixelLine = pSource + nStartX + (size_t)nSourceWidth * (j + nStartY);
 		int16* pTargetPixelLine = pTarget + j;
 		int16* pTargetPixel = pTargetPixelLine;
 		for (int i = 0; i < nRunX; i++) {
@@ -1597,7 +1597,7 @@ int16* CBasicProcessing::GaussFilter16bpp1Channel(CSize fullSize, CPoint offset,
 
 	// Gauss filter x-direction
 	CProcessingThreadPool& threadPool = CProcessingThreadPool::This();
-	int16* pIntermediate = new(std::nothrow) int16[rect.cx * rect.cy];
+	int16* pIntermediate = new(std::nothrow) int16[(size_t)rect.cx * rect.cy];
 	if (pIntermediate == NULL) return NULL;
 	CRequestGauss requestX(pPixels, fullSize, offset, rect, dRadius, pIntermediate);
 	if (!threadPool.Process(&requestX)) {
@@ -1606,7 +1606,7 @@ int16* CBasicProcessing::GaussFilter16bpp1Channel(CSize fullSize, CPoint offset,
 	}
 
 	// Gauss filter y-direction
-	int16* pTargetPixels = new(std::nothrow) int16[rect.cx * rect.cy];
+	int16* pTargetPixels = new(std::nothrow) int16[(size_t)rect.cx * rect.cy];
 	if (pTargetPixels == NULL) {
 		delete[] pIntermediate;
 		return NULL;
@@ -2632,11 +2632,11 @@ void* UnsharpMask_Core(CSize fullSize, CPoint offset, CSize rect, double dAmount
 	int nAmount = (int)(dAmount * (1 << 12) + 0.5);
 
 	for (int j = 0; j < rect.cy; j++) {
-		int nStartOffsetGray = offset.x + (offset.y + j) * fullSize.cx;
+		long long nStartOffsetGray = offset.x + (long long)(offset.y + j) * fullSize.cx;
 		const int16* pGrayPtr = pGrayImage + nStartOffsetGray;
 		const int16* pSmoothPtr = pSmoothedGrayImage + nStartOffsetGray;
 
-		int nStartOffsetDIB = offset.x * nChannels + (offset.y + j)* nDIBLineLen;
+		long long nStartOffsetDIB = offset.x * nChannels + (long long)(offset.y + j) * nDIBLineLen;
 		uint8* pTargetPixelLine = (uint8*)pTargetPixels + nStartOffsetDIB;
 		uint8* pSourcePixelLine = (uint8*)pSourcePixels + nStartOffsetDIB;
 

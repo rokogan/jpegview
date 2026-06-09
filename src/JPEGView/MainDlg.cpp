@@ -295,6 +295,7 @@ CMainDlg::~CMainDlg() {
 	delete m_pCropCtl;
 	delete m_pPanelMgr; // this will delete all panel controllers and all panels
 	delete m_pKeyMap;
+	delete m_pPrintImage;
 }
 
 void CMainDlg::SetStartupInfo(LPCTSTR sStartupFile, int nAutostartSlideShow, Helpers::ESorting eSorting, Helpers::ETransitionEffect eEffect, 
@@ -3459,6 +3460,9 @@ void CMainDlg::AnimateTransition() {
 		if (::PeekMessage(&msg, m_hWnd, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE)) break;
 		if (::PeekMessage(&msg, m_hWnd, WM_CONTEXTMENU, WM_CONTEXTMENU, PM_NOREMOVE)) break;
 	}
+
+	// A DC from ::GetDC must be released with ReleaseDC; detach so the CDC destructor does not DeleteDC it
+	::ReleaseDC(m_hWnd, paintDC.Detach());
 }
 
 void CMainDlg::CleanupAndTerminate() {

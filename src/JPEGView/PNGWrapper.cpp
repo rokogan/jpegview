@@ -60,7 +60,7 @@ struct PngReader::png_cache {
 	unsigned char* p_image;
 	unsigned char* p_frame;
 	unsigned char* p_temp;
-	unsigned int size;
+	size_t size;
 	unsigned int width;
 	unsigned int height;
 	unsigned int channels;
@@ -140,11 +140,11 @@ void* PngReader::ReadNextFrame(void** exif_chunk, png_uint_32* exif_size)
 		for (j = 0; j < cache.h0; j++)
 			memcpy(cache.rows_image[j + cache.y0] + cache.x0 * 4, cache.rows_frame[j], cache.w0 * 4);
 
-	void* pixels = malloc(cache.width * cache.height * cache.channels);
+	void* pixels = malloc((size_t)cache.width * cache.height * cache.channels);
 	if (pixels == NULL)
 		return NULL;
 	for (j = 0; j < cache.height; j++)
-		memcpy((char*)pixels + j * cache.width * cache.channels, cache.rows_image[j], cache.width * cache.channels);
+		memcpy((char*)pixels + (size_t)j * cache.width * cache.channels, cache.rows_image[j], cache.width * cache.channels);
 
 #ifdef PNG_APNG_SUPPORTED
 	if (cache.dop == PNG_DISPOSE_OP_PREVIOUS)
@@ -161,7 +161,8 @@ void* PngReader::ReadNextFrame(void** exif_chunk, png_uint_32* exif_size)
 
 bool PngReader::BeginReading(void* buffer, size_t sizebytes, bool& outOfMemory)
 {
-	unsigned int    width, height, channels, rowbytes, size, j;
+	unsigned int    width, height, channels, rowbytes, j;
+	size_t size;
 	png_bytepp      rows_image;
 	png_bytepp      rows_frame;
 	unsigned char*  p_image;
@@ -224,7 +225,7 @@ bool PngReader::BeginReading(void* buffer, size_t sizebytes, bool& outOfMemory)
 			return false;
 		}
 		rowbytes = (unsigned int)png_get_rowbytes(png_ptr, info_ptr);
-		size = height * rowbytes;
+		size = (size_t)height * rowbytes;
 		p_image = (unsigned char*)malloc(size);
 		p_frame = (unsigned char*)malloc(size);
 		p_temp = (unsigned char*)malloc(size);
@@ -248,10 +249,10 @@ bool PngReader::BeginReading(void* buffer, size_t sizebytes, bool& outOfMemory)
 				png_get_acTL(png_ptr, info_ptr, &frames, &plays);
 #endif
 			for (j = 0; j < height; j++)
-				rows_image[j] = p_image + j * rowbytes;
+				rows_image[j] = p_image + (size_t)j * rowbytes;
 
 			for (j = 0; j < height; j++)
-				rows_frame[j] = p_frame + j * rowbytes;
+				rows_frame[j] = p_frame + (size_t)j * rowbytes;
 
 #ifdef PNG_APNG_SUPPORTED
 			cache.bop = bop;

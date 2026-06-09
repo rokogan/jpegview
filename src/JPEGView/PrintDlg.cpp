@@ -796,7 +796,7 @@ CRect CPrintDlg::Align(const CSize& size, const CRect& rect, CPrintParameters::H
 	case CPrintParameters::VA_Center:
 		yOffset = (rect.Height() - size.cy) / 2;
 		break;
-	case CPrintParameters::HA_Right:
+	case CPrintParameters::VA_Bottom:
 		yOffset = rect.Height() - size.cy;
 		break;
 	}

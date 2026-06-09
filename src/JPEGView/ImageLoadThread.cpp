@@ -777,7 +777,8 @@ void CImageLoadThread::ProcessReadJXLRequest(CRequest* request) {
 				return;
 			}
 
-			pBuffer = new(std::nothrow) char[nFileSize];
+			// Use malloc (not new[]): ownership passes to JxlReader's decoder cache, which releases it with free() in DeleteCache()
+			pBuffer = (char*)malloc(nFileSize);
 			if (pBuffer == NULL) {
 				request->OutOfMemory = true;
 				::CloseHandle(hFile);

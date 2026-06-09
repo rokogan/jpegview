@@ -99,7 +99,7 @@ CJPEGImage* CReaderBMP::ReadBmpImage(LPCTSTR strFileName, bool& bOutOfMemory) {
 
 	int bytesPerPixel = infoheader.bits/8;
 	int paddedWidth = Helpers::DoPadding(infoheader.width*bytesPerPixel, 4);
-	int fileSizeBytes = infoheader.height*paddedWidth;
+	__int64 fileSizeBytes = (__int64)infoheader.height*paddedWidth;
 	if (fileSizeBytes <= 0 || fileSizeBytes > MAX_BMP_FILE_SIZE) {
 		fclose(fptr);
 		bOutOfMemory = fileSizeBytes > MAX_BMP_FILE_SIZE;
