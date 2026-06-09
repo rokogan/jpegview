@@ -6,11 +6,13 @@ on:
   #push:
   # run this action when kicked off manually
   workflow_dispatch:
-  # when a tag or branch created
-  create:
-  # published releases get checked
-  release:
-    types: [published]
+  # NOTE: the 'create' and 'release: published' triggers are intentionally disabled so that
+  # pushing a version tag (or publishing a release) does NOT kick off a full from-source rebuild
+  # of every codec dependency. The prebuilt libs are committed; run this manually only when the
+  # binary deps actually need rebuilding.
+  #create:
+  #release:
+  #  types: [published]
 
 jobs:
   call-workflow-build-win32:

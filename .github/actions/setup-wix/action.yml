@@ -8,19 +8,31 @@ runs:
     #  https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#adding-a-system-path
     #  https://stackoverflow.com/a/64831469
     #  https://github.community/t/set-path-for-wix-toolset-in-windows-runner/154708
-    - name: Set WiX paths for candle and light
-      shell: powershell
-      env:
-        WIX_PATH: ${{ env.wix }}
+    - name: Setup WiX Toolset 3.x (candle/light + MSBuild targets)
+      shell: pwsh
+      # The windows-2022 image preinstalls WiX Toolset 3.14 (at 'C:\Program Files (x86)\WiX Toolset v3.14\bin');
+      # the Chocolatey install below is only a fallback in case a future image drops it.
+      # Crucially we export WixTargetsPath so headless msbuild can resolve the WiX v3 MSBuild targets that
+      # src/JPEGView.Setup/JPEGView.Setup.wixproj imports via <Import Project="$(WixTargetsPath)"> -- setting
+      # PATH and WIX alone is NOT enough for that import, which otherwise fails EnsureWixToolsetInstalled.
       run: |
-        #echo "$env:WIX_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        # https://github.community/t/set-path-for-wix-toolset-in-windows-runner/154708/3
-        $env:Path += ";C:\Program Files (x86)\WiX Toolset v3.11\bin"
-        #echo "$env:PATH"
-        echo "$env:WIX_PATH"
-        # check that they're found (old way)
-        #where.exe candle.exe
-        #where.exe light.exe
-        # check where they're found, with all information
-        Get-Command candle.exe | Format-List
-        Get-Command light.exe | Format-List
+        $wixBin = Get-ChildItem 'C:\Program Files (x86)\WiX Toolset v3*\bin' -Directory -ErrorAction SilentlyContinue | Select-Object -Last 1
+        if (-not $wixBin) {
+          Write-Host "WiX 3.x not found; installing via Chocolatey..."
+          choco install wixtoolset --version=3.14.1 -y --no-progress
+          $wixBin = Get-ChildItem 'C:\Program Files (x86)\WiX Toolset v3*\bin' -Directory -ErrorAction SilentlyContinue | Select-Object -Last 1
+        }
+        if (-not $wixBin) { throw "WiX 3.x bin directory not found after install" }
+        Write-Host "Using WiX at $($wixBin.FullName)"
+        Add-Content -Path $env:GITHUB_PATH -Value $wixBin.FullName
+        Add-Content -Path $env:GITHUB_ENV -Value ("WIX=" + (Split-Path $wixBin.FullName -Parent) + "\")
+        # Locate Wix.targets and export WixTargetsPath (MSBuild reads environment variables as properties),
+        # so the .wixproj's $(WixTargetsPath) import resolves under headless msbuild.
+        $wixTargets = Get-ChildItem -Path 'C:\Program Files (x86)\WiX Toolset v3*', 'C:\Program Files (x86)\MSBuild\Microsoft\WiX' -Recurse -Filter 'Wix.targets' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($wixTargets) {
+          Write-Host "WixTargetsPath = $($wixTargets.FullName)"
+          Add-Content -Path $env:GITHUB_ENV -Value ("WixTargetsPath=" + $wixTargets.FullName)
+        } else {
+          Write-Host "::warning::Wix.targets not found; the .wixproj will rely on its default import path"
+        }
+        Get-Command "$($wixBin.FullName)\candle.exe" | Format-List
