@@ -188,6 +188,11 @@ public:
 	// Write a single setting (key=value) to the user INI file. Used by the settings dialog.
 	void WriteUserSetting(LPCTSTR sKey, LPCTSTR sValue);
 
+	// Re-read the user-INI settings the Preferences dialog can change, after WriteUserSetting()
+	// has written them. Invalidates the cached INI read buffers so fresh values are picked up
+	// without a restart. Settings not in this set (e.g. fullscreen, CPU cores) still need a restart.
+	void ReloadUserSettings();
+
 private:
 	static CSettingsProvider* sm_instance;
 	CString m_sEXEPath;

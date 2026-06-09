@@ -316,6 +316,7 @@ LRESULT CMainDlg::OnSettingChange(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lPara
 	// Re-apply the dark/light title bar when the user switches the OS theme at runtime
 	if (lParam != 0 && _tcscmp((LPCTSTR)lParam, _T("ImmersiveColorSet")) == 0) {
 		HelpersGUI::ApplyModernWindowChrome(m_hWnd);
+		HelpersGUI::InitDarkModeForProcess();
 	}
 	bHandled = FALSE;
 	return 0;
@@ -326,6 +327,7 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 
 	// Modern, OS-following window chrome (dark title bar + rounded corners on Win10/11)
 	HelpersGUI::ApplyModernWindowChrome(m_hWnd);
+	HelpersGUI::InitDarkModeForProcess(); // dark popup/context menus when the theme is dark
 
 	// set the scaling of the screen (DPI) compared to 96 DPI (design value)
 	CPaintDC dc(this->m_hWnd);
@@ -1910,7 +1912,10 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 		case IDM_SETTINGS:
 			{
 				CSettingsDlg dlgSettings;
-				dlgSettings.DoModal(m_hWnd);
+				if (dlgSettings.DoModal(m_hWnd) == IDOK) {
+					CSettingsProvider::This().ReloadUserSettings();
+					ApplyLiveSettings();
+				}
 			}
 			break;
 		case IDM_EDIT_GLOBAL_CONFIG:
@@ -3069,6 +3074,36 @@ bool CMainDlg::IsAdjustWindowToImage() {
 
 bool CMainDlg::IsImageExactlyFittingWindow() {
 	return (m_pCurrentImage != NULL) && m_pCurrentImage->DIBWidth() == m_clientRect.Width() && m_pCurrentImage->DIBHeight() == m_clientRect.Height();
+}
+
+void CMainDlg::ApplyLiveSettings() {
+	CSettingsProvider& sp = CSettingsProvider::This();
+
+	// Theme -> dark/light immersive title bar, immediately
+	HelpersGUI::ApplyModernWindowChrome(m_hWnd);
+
+	// Sorting + direction and folder-navigation scope
+	m_pFileList->SetSorting(sp.Sorting(), sp.IsSortedAscending());
+	m_pFileList->SetNavigationMode(sp.Navigation());
+
+	// File name overlay
+	m_bShowFileName = sp.ShowFileName();
+
+	// File info (EXIF) panel - mirror the IDM_SHOW_FILEINFO toggle
+	if (m_pEXIFDisplayCtl->IsActive() != sp.ShowFileInfo()) {
+		m_pEXIFDisplayCtl->SetActive(sp.ShowFileInfo());
+		m_pNavPanelCtl->GetNavPanel()->GetBtnShowInfo()->SetActive(sp.ShowFileInfo());
+	}
+
+	// Slideshow transition (windowed member, mirrors the value set in the constructor)
+	m_eTransitionEffect = sp.SlideShowTransitionEffect();
+
+	// Windowed auto-zoom mode; HQ resampling is read into the processing flags on the next load
+	m_eAutoZoomModeWindowed = sp.AutoZoomMode();
+
+	// Reload the current image so the new zoom mode / HQ resampling take effect, then repaint
+	GotoImage(POS_Current);
+	this->Invalidate(FALSE);
 }
 
 void CMainDlg::AdjustWindowToImage(bool bAfterStartup) {

@@ -862,6 +862,23 @@ void CSettingsProvider::WriteUserSetting(LPCTSTR sKey, LPCTSTR sValue) {
 	WriteString(sKey, sValue);
 }
 
+void CSettingsProvider::ReloadUserSettings() {
+	m_bUserINIExists = ExistsUserINI();
+
+	// ReadIniString() caches the whole [JPEGView] section once (m_pUserKeys / m_pIniUserSectionBuffer).
+	// WriteUserSetting() only writes to disk, so the cache is stale; drop it to force a fresh read.
+	delete[] m_pIniUserSectionBuffer; m_pIniUserSectionBuffer = NULL;
+	delete m_pUserKeys; m_pUserKeys = NULL;
+	delete[] m_pIniGlobalSectionBuffer; m_pIniGlobalSectionBuffer = NULL;
+	delete m_pGlobalKeys; m_pGlobalKeys = NULL;
+
+	// Re-read the writeable settings (sorting, navigation, zoom mode, HQ resampling,
+	// show file name/info, transition, nav panel) plus the keys read only in the ctor.
+	ReadWriteableINISettings();
+	m_sAppTheme = GetString(_T("AppTheme"), _T("System"));
+	m_bSingleInstance = GetBool(_T("SingleInstance"), false);
+}
+
 void CSettingsProvider::WriteDouble(LPCTSTR sKey, double dValue) {
 	TCHAR buff[32];
 	_stprintf_s(buff, 32, _T("%.2f"), dValue);

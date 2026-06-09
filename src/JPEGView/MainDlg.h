@@ -210,6 +210,8 @@ public:
 	bool ScreenToImage(float & fX, float & fY); 
 	bool ImageToScreen(float & fX, float & fY);
 	void ExecuteCommand(int nCommand);
+	// Re-apply the subset of settings that can change without restarting, after the Preferences dialog
+	void ApplyLiveSettings();
 	bool PrepareForModalPanel(); // returns if navigation panel was enabled, turns it off
 	int TrackPopupMenu(CPoint pos, HMENU hMenu);
 	void AdjustWindowToImage(bool bAfterStartup);
