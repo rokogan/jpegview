@@ -343,6 +343,7 @@
     <ClCompile Include="ReaderTGA.cpp" />
     <ClCompile Include="ResizeDlg.cpp" />
     <ClCompile Include="ResizeFilter.cpp" />
+    <ClCompile Include="SettingsDlg.cpp" />
     <ClCompile Include="SaveImage.cpp" />
     <ClCompile Include="SettingsProvider.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -439,6 +440,7 @@
     <ClInclude Include="ReaderTGA.h" />
     <ClInclude Include="ResizeDlg.h" />
     <ClInclude Include="ResizeFilter.h" />
+    <ClInclude Include="SettingsDlg.h" />
     <ClInclude Include="SaveImage.h" />
     <ClInclude Include="SettingsProvider.h" />
     <ClInclude Include="stdafx.h" />

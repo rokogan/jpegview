@@ -129,7 +129,15 @@ namespace HelpersGUI {
 		if (pDwmSetWindowAttribute == NULL)
 			return;
 
-		BOOL bDark = IsSystemInDarkMode();
+		// Theme: honor the user's explicit choice, otherwise follow the OS
+		CString sTheme = CSettingsProvider::This().AppTheme();
+		BOOL bDark;
+		if (sTheme.CompareNoCase(_T("Dark")) == 0)
+			bDark = TRUE;
+		else if (sTheme.CompareNoCase(_T("Light")) == 0)
+			bDark = FALSE;
+		else
+			bDark = IsSystemInDarkMode();
 		const DWORD DWMWA_USE_IMMERSIVE_DARK_MODE = 20;        // 19 on early Win10 20H1 insider builds
 		const DWORD DWMWA_USE_IMMERSIVE_DARK_MODE_OLD = 19;
 		const DWORD DWMWA_WINDOW_CORNER_PREFERENCE = 33;       // Win11

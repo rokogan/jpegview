@@ -260,6 +260,7 @@
 #define IDM_AUTO_ZOOM_FILL	12530		// :KeyMap: set auto zoom mode fill screen
 #define IDM_EDIT_GLOBAL_CONFIG 12600		// :KeyMap: edit global configuration
 #define IDM_EDIT_USER_CONFIG   12610		// :KeyMap: edit user configuration
+#define IDM_SETTINGS           12640		// :KeyMap: open the settings (preferences) dialog
 #define IDM_MANAGE_OPEN_WITH_MENU 12612
 #define IDM_SET_AS_DEFAULT_VIEWER 12615
 #define IDM_UPDATE_USER_CONFIG 12617
@@ -337,8 +338,27 @@
 // in the crop menu
 #define SUBMENU_POS_CROPMODE 3
 
+// Settings (Preferences) dialog
+#ifndef IDC_STATIC
+#define IDC_STATIC                      (-1)
+#endif
+#define IDD_SETTINGS                    8000
+#define IDC_SET_THEME                   8001
+#define IDC_SET_SHOWFILENAME            8002
+#define IDC_SET_SHOWFILEINFO            8003
+#define IDC_SET_FULLSCREEN              8004
+#define IDC_SET_ZOOM                    8005
+#define IDC_SET_HQ                      8006
+#define IDC_SET_SORT                    8007
+#define IDC_SET_SORTASC                 8008
+#define IDC_SET_NAV                     8009
+#define IDC_SET_TRANSITION              8010
+#define IDC_SET_SINGLEINST              8011
+#define IDC_SET_FILEASSOC               8012
+#define IDC_SET_EDITINI                 8013
+
 // Next default values for new objects
-// 
+//
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE	2000

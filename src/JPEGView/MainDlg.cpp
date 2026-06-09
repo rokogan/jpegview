@@ -31,6 +31,7 @@
 #include "AboutDlg.h"
 #include "CropSizeDlg.h"
 #include "ResizeDlg.h"
+#include "SettingsDlg.h"
 #include "ResizeFilter.h"
 #include "EXIFReader.h"
 #include "EXIFHelpers.h"
@@ -1906,6 +1907,12 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 				AdjustWindowToImage(false);
 				break;
 			}
+		case IDM_SETTINGS:
+			{
+				CSettingsDlg dlgSettings;
+				dlgSettings.DoModal(m_hWnd);
+			}
+			break;
 		case IDM_EDIT_GLOBAL_CONFIG:
 		case IDM_EDIT_USER_CONFIG:
 			EditINIFile(nCommand == IDM_EDIT_GLOBAL_CONFIG);

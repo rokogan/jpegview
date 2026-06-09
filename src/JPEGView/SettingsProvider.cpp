@@ -222,6 +222,7 @@ CSettingsProvider::CSettingsProvider(void) {
 	}
 
 	m_colorBackground = GetColor(_T("BackgroundColor"), 0);
+	m_sAppTheme = GetString(_T("AppTheme"), _T("System"));
 	m_colorGUI = GetColor(_T("GUIColor"), RGB(243, 242, 231));
 	m_colorHighlight = GetColor(_T("HighlightColor"), RGB(255, 205, 0));
 	m_colorSelected = GetColor(_T("SelectionColor"), RGB(255, 205, 0));
@@ -855,6 +856,10 @@ LPCTSTR CSettingsProvider::GetAutoZoomModeString(Helpers::EAutoZoomMode autoZoom
 
 void CSettingsProvider::WriteString(LPCTSTR sKey, LPCTSTR sString) {
 	::WritePrivateProfileString(SECTION_NAME, sKey, sString, m_sIniNameUser);
+}
+
+void CSettingsProvider::WriteUserSetting(LPCTSTR sKey, LPCTSTR sValue) {
+	WriteString(sKey, sValue);
 }
 
 void CSettingsProvider::WriteDouble(LPCTSTR sKey, double dValue) {

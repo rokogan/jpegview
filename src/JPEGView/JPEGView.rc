@@ -121,6 +121,42 @@ BEGIN
     LTEXT           "",IDC_NUMCORES,64,49,163,10,NOT WS_GROUP
 END
 
+IDD_SETTINGS DIALOGEX 0, 0, 250, 274
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Settings"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Appearance",IDC_STATIC,7,4,236,56
+    LTEXT           "Title bar theme:",IDC_STATIC,14,19,62,9
+    COMBOBOX        IDC_SET_THEME,80,17,80,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Show file name",IDC_SET_SHOWFILENAME,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,34,120,10
+    CONTROL         "Show image info (EXIF)",IDC_SET_SHOWFILEINFO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,46,140,10
+
+    GROUPBOX        "Startup && view",IDC_STATIC,7,64,236,56
+    CONTROL         "Start in full-screen mode",IDC_SET_FULLSCREEN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,78,150,10
+    LTEXT           "Default zoom:",IDC_STATIC,14,93,62,9
+    COMBOBOX        IDC_SET_ZOOM,80,91,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "High-quality resampling",IDC_SET_HQ,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,106,150,10
+
+    GROUPBOX        "Navigation && slideshow",IDC_STATIC,7,124,236,76
+    LTEXT           "Sort files by:",IDC_STATIC,14,139,62,9
+    COMBOBOX        IDC_SET_SORT,80,137,100,120,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Ascending order",IDC_SET_SORTASC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,154,150,10
+    LTEXT           "Folder navigation:",IDC_STATIC,14,169,62,9
+    COMBOBOX        IDC_SET_NAV,80,167,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Transition:",IDC_STATIC,14,184,62,9
+    COMBOBOX        IDC_SET_TRANSITION,80,182,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    GROUPBOX        "File handling",IDC_STATIC,7,204,236,44
+    CONTROL         "Allow only a single running instance",IDC_SET_SINGLEINST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,218,170,10
+    PUSHBUTTON      "File associations...",IDC_SET_FILEASSOC,14,231,95,13
+    PUSHBUTTON      "Advanced (edit INI)...",IDC_SET_EDITINI,113,231,95,13
+
+    LTEXT           "Some changes take effect after restart.",IDC_STATIC,7,258,150,9
+    DEFPUSHBUTTON   "OK",IDOK,134,254,52,14
+    PUSHBUTTON      "Cancel",IDCANCEL,190,254,52,14
+END
+
 IDD_SET_CROP_SIZE DIALOGEX 8, 7, 159, 101
 STYLE DS_SETFONT | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
@@ -434,6 +470,8 @@ BEGIN
             MENUITEM "Edit global settings...",     IDM_EDIT_GLOBAL_CONFIG
             MENUITEM "Edit user settings...",       IDM_EDIT_USER_CONFIG
             MENUITEM "Update user settings...",     IDM_UPDATE_USER_CONFIG
+            MENUITEM SEPARATOR
+            MENUITEM "Preferences...",              IDM_SETTINGS
             MENUITEM "Manage 'Open image with' menu...", IDM_MANAGE_OPEN_WITH_MENU
             MENUITEM SEPARATOR
             MENUITEM "Set current parameters as default values...", IDM_SAVE_PARAMETERS

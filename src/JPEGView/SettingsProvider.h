@@ -102,6 +102,8 @@ public:
 	bool ExplicitWindowRect() { return m_bExplicitWindowRect; }
 	CSize DefaultFixedCropSize() { return m_DefaultFixedCropSize; }
 	COLORREF ColorBackground() { return m_colorBackground; }
+	// Window theme for the title bar/chrome: "System" (follow OS), "Dark" or "Light"
+	LPCTSTR AppTheme() { return m_sAppTheme; }
 	COLORREF ColorGUI() { return m_colorGUI; }
 	COLORREF ColorHighlight() { return m_colorHighlight; }
 	COLORREF ColorSelected() { return m_colorSelected; }
@@ -182,6 +184,9 @@ public:
 	LPCTSTR GetUserINIFileName() { return m_sIniNameUser; }
 	// Get the file name (without path) of the user INI file
 	LPCTSTR GetINIFileTitle() { return m_sIniFileTitle; }
+
+	// Write a single setting (key=value) to the user INI file. Used by the settings dialog.
+	void WriteUserSetting(LPCTSTR sKey, LPCTSTR sValue);
 
 private:
 	static CSettingsProvider* sm_instance;
@@ -272,6 +277,7 @@ private:
 	bool m_bExplicitWindowRect;
 	CSize m_DefaultFixedCropSize;
 	COLORREF m_colorBackground;
+	CString m_sAppTheme;
 	COLORREF m_colorGUI;
 	COLORREF m_colorHighlight;
 	COLORREF m_colorSelected;
