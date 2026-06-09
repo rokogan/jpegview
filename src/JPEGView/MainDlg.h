@@ -76,6 +76,7 @@ public:
 		MESSAGE_HANDLER(WM_XBUTTONDBLCLK, OnXButtonDown)
 		MESSAGE_HANDLER(WM_MOUSEMOVE, OnMouseMove)
 		MESSAGE_HANDLER(WM_MOUSEWHEEL, OnMouseWheel)
+		MESSAGE_HANDLER(0x0119 /*WM_GESTURE*/, OnGesture)
 		MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
 		MESSAGE_HANDLER(WM_SYSKEYDOWN, OnSysKeyDown)
 		MESSAGE_HANDLER(WM_GETDLGCODE, OnGetDlgCode)
@@ -120,6 +121,7 @@ public:
 	LRESULT OnXButtonDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnMouseMove(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnMouseWheel(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/);
+	LRESULT OnGesture(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnKeyDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnSysKeyDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnGetDlgCode(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
@@ -289,6 +291,12 @@ private:
 	CPoint m_DIBOffsets;
 	int m_nCapturedX, m_nCapturedY;
 	int m_nMouseX, m_nMouseY;
+	// Touch gesture state (pinch-zoom + swipe-navigate)
+	ULONGLONG m_ullGestureZoomArg;
+	double m_dGestureStartZoom;
+	CPoint m_ptGestureStart;
+	int m_nGestureLastX, m_nGestureLastY;
+	bool m_bGestureSwiped;
 	bool m_bDefaultSelectionMode;
 	bool m_bShowFileName;
 	bool m_bFullScreenMode;

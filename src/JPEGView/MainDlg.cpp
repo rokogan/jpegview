@@ -92,6 +92,39 @@ static const int NO_UPDATE_WINDOW = 8; // used in GotoImage() method
 
 static const CSize HUGE_SIZE = CSize(99999999, 99999999);
 
+// --- Touch gesture support. stdafx.h pins _WIN32_WINNT to XP, which hides WM_GESTURE and the
+//     gesture APIs, so declare the few needed bits locally and dynamic-load from user32.dll. ---
+#ifndef WM_GESTURE
+#define WM_GESTURE 0x0119
+#endif
+namespace {
+	const DWORD JV_GID_ZOOM = 3, JV_GID_PAN = 4;
+	const DWORD JV_GF_BEGIN = 1;
+	typedef struct { DWORD cbSize, dwFlags, dwID; HWND hwndTarget; POINTS ptsLocation;
+		DWORD dwInstanceID, dwSequenceID; ULONGLONG ullArguments; UINT cbExtraArgs; } JV_GESTUREINFO;
+	typedef BOOL (WINAPI *GetGestureInfoFn)(HANDLE, JV_GESTUREINFO*);
+	typedef BOOL (WINAPI *CloseGestureInfoHandleFn)(HANDLE);
+
+	static bool LoadGestureApis(GetGestureInfoFn& pGet, CloseGestureInfoHandleFn& pClose) {
+		static GetGestureInfoFn s_get = NULL; static CloseGestureInfoHandleFn s_close = NULL; static bool s_resolved = false;
+		if (!s_resolved) {
+			s_resolved = true;
+			HMODULE hUser = ::GetModuleHandle(_T("user32.dll"));
+			if (hUser != NULL) {
+				s_get = (GetGestureInfoFn)::GetProcAddress(hUser, "GetGestureInfo");
+				s_close = (CloseGestureInfoHandleFn)::GetProcAddress(hUser, "CloseGestureInfoHandle");
+			}
+		}
+		pGet = s_get; pClose = s_close;
+		return s_get != NULL && s_close != NULL;
+	}
+
+	// True for the synthetic mouse messages touch also posts, so a pinch/swipe doesn't also start a drag/crop.
+	static bool IsTouchEmulatedMouseMessage() {
+		return (::GetMessageExtraInfo() & 0xFFFFFF80) == 0xFF515700; // MOUSEEVENTF_FROMTOUCH
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Helpers
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -288,6 +321,11 @@ CMainDlg::CMainDlg(bool bForceFullScreen) {
 	m_pKeyMap = new CKeyMap(); // routine to load the keymap, it's not as simple as just loading one file anymore, but all logic handled by CKeyMap
 	m_pPrintImage = new CPrintImage(CSettingsProvider::This().PrintMargin(), CSettingsProvider::This().DefaultPrintWidth());
 	m_pHelpDlg = NULL;
+	m_ullGestureZoomArg = 0;
+	m_dGestureStartZoom = 1.0;
+	m_ptGestureStart = CPoint(0, 0);
+	m_nGestureLastX = m_nGestureLastY = 0;
+	m_bGestureSwiped = false;
 }
 
 CMainDlg::~CMainDlg() {
@@ -767,6 +805,7 @@ LRESULT CMainDlg::OnClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL&
 }
 
 LRESULT CMainDlg::OnLButtonDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/) {
+	if (IsTouchEmulatedMouseMessage()) return 0; // pinch/swipe is handled in OnGesture; ignore the emulated click
 	this->SetCapture();
 	bool isCropping = m_pCropCtl->IsCropping();
 	CPoint pointClicked(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
@@ -913,6 +952,7 @@ LRESULT CMainDlg::OnXButtonDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/,
 }
 
 LRESULT CMainDlg::OnMouseMove(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/) {
+	if (IsTouchEmulatedMouseMessage()) return 0; // ignore touch-synthesized move; panning is via OnGesture
 	// Turn mouse pointer on when mouse has moved some distance
 	int nOldMouseY = m_nMouseY;
 	int nOldMouseX = m_nMouseX;
@@ -964,6 +1004,48 @@ LRESULT CMainDlg::OnMouseWheel(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, 
 	} else if (m_dZoom > 0 && !m_pUnsharpMaskPanelCtl->IsVisible()) {
 		PerformZoom(CSettingsProvider::This().MouseWheelZoomSpeed() * double(nDelta) / WHEEL_DELTA, true, m_bMouseOn, true);
 	}
+	return 0;
+}
+
+LRESULT CMainDlg::OnGesture(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& bHandled) {
+	GetGestureInfoFn pGet; CloseGestureInfoHandleFn pClose;
+	if (!LoadGestureApis(pGet, pClose)) { bHandled = FALSE; return 0; } // pre-Win7: DefWindowProc frees the handle
+	JV_GESTUREINFO gi; ZeroMemory(&gi, sizeof(gi)); gi.cbSize = sizeof(gi);
+	if (!pGet((HANDLE)lParam, &gi)) { bHandled = FALSE; return 0; }
+
+	POINT pt = { gi.ptsLocation.x, gi.ptsLocation.y }; // screen coords -> client
+	::ScreenToClient(m_hWnd, &pt);
+
+	if (gi.dwID == JV_GID_ZOOM) {
+		// Pinch: scale relative to the finger distance at gesture start, centered on the pinch point
+		if (gi.dwFlags & JV_GF_BEGIN) {
+			m_ullGestureZoomArg = gi.ullArguments;
+			m_dGestureStartZoom = m_dZoom;
+		} else if (m_ullGestureZoomArg != 0 && m_dZoom > 0 && !m_pUnsharpMaskPanelCtl->IsVisible()) {
+			double dScale = (double)gi.ullArguments / (double)m_ullGestureZoomArg;
+			m_nMouseX = pt.x; m_nMouseY = pt.y; // PerformZoom centers on these when bZoomToMouse is true
+			PerformZoom(m_dGestureStartZoom * dScale, false, true, false);
+		}
+	} else if (gi.dwID == JV_GID_PAN) {
+		if (gi.dwFlags & JV_GF_BEGIN) {
+			m_ptGestureStart = CPoint(pt.x, pt.y);
+			m_nGestureLastX = pt.x; m_nGestureLastY = pt.y; m_bGestureSwiped = false;
+		} else {
+			// Pan a zoomed-in image; if it isn't pannable, a fast horizontal swipe navigates
+			bool bPanned = PerformPan(pt.x - m_nGestureLastX, pt.y - m_nGestureLastY, false);
+			m_nGestureLastX = pt.x; m_nGestureLastY = pt.y;
+			if (!bPanned && !m_bGestureSwiped && !m_pPanelMgr->IsModalPanelShown()) {
+				int nTotalDx = pt.x - m_ptGestureStart.x, nTotalDy = pt.y - m_ptGestureStart.y;
+				int nThreshold = m_clientRect.Width() / 6;
+				if (abs(nTotalDx) > nThreshold && abs(nTotalDx) > abs(nTotalDy) * 2) {
+					m_bGestureSwiped = true; // one navigation per gesture
+					GotoImage(nTotalDx < 0 ? POS_Next : POS_Previous);
+				}
+			}
+		}
+	}
+	pClose((HANDLE)lParam);
+	bHandled = TRUE;
 	return 0;
 }
 
