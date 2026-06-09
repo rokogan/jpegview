@@ -39,15 +39,6 @@ namespace HelpersGUI {
 	// Resolves the effective dark/light state from the AppTheme setting (Dark/Light/System->OS).
 	bool ResolveDarkMode();
 
-	// Dark-themes a dialog body (call in OnInitDialog when ResolveDarkMode()); the dialog must also
-	// handle WM_CTLCOLOR* to paint backgrounds/text with these brushes.
-	void ApplyDarkThemeToDialog(HWND hDlg);
-	HBRUSH GetDarkDialogBrush();
-	HBRUSH GetDarkEditBrush();
-
-	// Enables dark popup (TrackPopupMenu) menus process-wide on Windows 10 1809+. Call once at startup.
-	void InitDarkModeForProcess();
-
 	// Creates a bold version of the font that is currently selected in the given DC.
 	// The caller is responsible for deleting the returned font when no longer used.
 	HFONT CreateBoldFontOfSelectedFont(CDC & dc);

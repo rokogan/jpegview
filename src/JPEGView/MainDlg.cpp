@@ -354,7 +354,6 @@ LRESULT CMainDlg::OnSettingChange(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lPara
 	// Re-apply the dark/light title bar when the user switches the OS theme at runtime
 	if (lParam != 0 && _tcscmp((LPCTSTR)lParam, _T("ImmersiveColorSet")) == 0) {
 		HelpersGUI::ApplyModernWindowChrome(m_hWnd);
-		HelpersGUI::InitDarkModeForProcess();
 	}
 	bHandled = FALSE;
 	return 0;
@@ -365,7 +364,6 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 
 	// Modern, OS-following window chrome (dark title bar + rounded corners on Win10/11)
 	HelpersGUI::ApplyModernWindowChrome(m_hWnd);
-	HelpersGUI::InitDarkModeForProcess(); // dark popup/context menus when the theme is dark
 
 	// set the scaling of the screen (DPI) compared to 96 DPI (design value)
 	CPaintDC dc(this->m_hWnd);

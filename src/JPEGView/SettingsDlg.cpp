@@ -17,7 +17,6 @@ static void ComboAdd(HWND hCombo, LPCTSTR sText) {
 LRESULT CSettingsDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/) {
 	CenterWindow();
 	HelpersGUI::ApplyModernWindowChrome(m_hWnd); // dark/light title bar to match the rest of the app
-	HelpersGUI::ApplyDarkThemeToDialog(m_hWnd);  // dark body + controls when the theme is dark
 	CSettingsProvider& sp = CSettingsProvider::This();
 
 	// --- Appearance ---
@@ -127,21 +126,6 @@ LRESULT CSettingsDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 	m_bgColor = sp.ColorBackground();
 
 	return TRUE;
-}
-
-LRESULT CSettingsDlg::OnCtlColor(UINT uMsg, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled) {
-	if (!HelpersGUI::ResolveDarkMode()) {
-		bHandled = FALSE; // light mode: default handling
-		return 0;
-	}
-	HDC hDC = (HDC)wParam;
-	::SetTextColor(hDC, RGB(240, 240, 240));
-	if (uMsg == WM_CTLCOLOREDIT || uMsg == WM_CTLCOLORLISTBOX) {
-		::SetBkColor(hDC, RGB(45, 45, 45));
-		return (LRESULT)HelpersGUI::GetDarkEditBrush();
-	}
-	::SetBkColor(hDC, RGB(32, 32, 32));
-	return (LRESULT)HelpersGUI::GetDarkDialogBrush();
 }
 
 LRESULT CSettingsDlg::OnOK(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
