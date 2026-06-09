@@ -20,6 +20,7 @@ public:
 		COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
 		COMMAND_ID_HANDLER(IDC_SET_FILEASSOC, OnFileAssoc)
 		COMMAND_ID_HANDLER(IDC_SET_EDITINI, OnEditIni)
+		COMMAND_ID_HANDLER(IDC_SET_BGCOLOR, OnBgColor)
 	END_MSG_MAP()
 
 	LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -28,4 +29,8 @@ public:
 	LRESULT OnCancel(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnFileAssoc(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnEditIni(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+	LRESULT OnBgColor(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+
+private:
+	COLORREF m_bgColor; // background color picked via the "Background color..." button, written on OK
 };

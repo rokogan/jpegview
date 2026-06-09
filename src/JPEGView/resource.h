@@ -356,6 +356,15 @@
 #define IDC_SET_SINGLEINST              8011
 #define IDC_SET_FILEASSOC               8012
 #define IDC_SET_EDITINI                 8013
+#define IDC_SET_SHOWNAVPANEL            8014
+#define IDC_SET_BGCOLOR                 8015
+#define IDC_SET_AUTOROTATE              8016
+#define IDC_SET_WRAP                    8017
+#define IDC_SET_WHEELNAV                8018
+#define IDC_SET_ALLOWDELETE             8019
+#define IDC_SET_JPEGQ                   8020
+#define IDC_SET_CPUCORES                8021
+#define IDC_SET_FORCEGDI                8022
 
 // Next default values for new objects
 //

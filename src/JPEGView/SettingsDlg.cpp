@@ -4,6 +4,7 @@
 #include "SettingsProvider.h"
 #include "HelpersGUI.h"
 #include "FileExtensionsDlg.h"
+#include <commdlg.h>
 
 static int ComboSel(HWND hCombo) {
 	return (int)::SendMessage(hCombo, CB_GETCURSEL, 0, 0);
@@ -101,6 +102,29 @@ LRESULT CSettingsDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 
 	// --- File handling ---
 	CheckDlgButton(IDC_SET_SINGLEINST, sp.SingleInstance() ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_SET_ALLOWDELETE, sp.AllowFileDeletion() ? BST_CHECKED : BST_UNCHECKED);
+
+	// --- additional toggles ---
+	CheckDlgButton(IDC_SET_SHOWNAVPANEL, sp.ShowNavPanel() ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_SET_AUTOROTATE, sp.AutoRotateEXIF() ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_SET_WHEELNAV, sp.NavigateWithMouseWheel() ? BST_CHECKED : BST_UNCHECKED);
+	// WrapAroundFolder accessor ANDs with the nav mode, so read the raw INI value for the checkbox
+	::GetPrivateProfileString(_T("JPEGView"), _T("WrapAroundFolder"), _T("true"), buf, 16, sp.GetUserINIFileName());
+	CheckDlgButton(IDC_SET_WRAP, (_tcsicmp(buf, _T("true")) == 0) ? BST_CHECKED : BST_UNCHECKED);
+
+	// --- Performance ---
+	CheckDlgButton(IDC_SET_FORCEGDI, sp.ForceGDIPlus() ? BST_CHECKED : BST_UNCHECKED);
+	SetDlgItemInt(IDC_SET_JPEGQ, sp.JPEGSaveQuality(), FALSE);
+	HWND hCores = GetDlgItem(IDC_SET_CPUCORES);
+	ComboAdd(hCores, _T("Auto"));
+	ComboAdd(hCores, _T("1")); ComboAdd(hCores, _T("2")); ComboAdd(hCores, _T("3")); ComboAdd(hCores, _T("4"));
+	// CPUCoresUsed accessor resolves 0 to a core count, so read the raw INI value (0 = Auto)
+	::GetPrivateProfileString(_T("JPEGView"), _T("CPUCoresUsed"), _T("0"), buf, 16, sp.GetUserINIFileName());
+	int nCores = _ttoi(buf);
+	if (nCores < 0) nCores = 0; else if (nCores > 4) nCores = 4;
+	::SendMessage(hCores, CB_SETCURSEL, nCores, 0);
+
+	m_bgColor = sp.ColorBackground();
 
 	return TRUE;
 }
@@ -149,6 +173,26 @@ LRESULT CSettingsDlg::OnOK(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
 	int nTransIdx = ComboSel(GetDlgItem(IDC_SET_TRANSITION));
 	if (nTransIdx >= 0 && nTransIdx < 4) sp.WriteUserSetting(_T("SlideShowTransitionEffect"), sTrans[nTransIdx]);
 
+	// Additional toggles
+	sp.WriteUserSetting(_T("AllowFileDeletion"), IsDlgButtonChecked(IDC_SET_ALLOWDELETE) ? _T("true") : _T("false"));
+	sp.WriteUserSetting(_T("ShowNavPanel"), IsDlgButtonChecked(IDC_SET_SHOWNAVPANEL) ? _T("true") : _T("false"));
+	sp.WriteUserSetting(_T("AutoRotateEXIF"), IsDlgButtonChecked(IDC_SET_AUTOROTATE) ? _T("true") : _T("false"));
+	sp.WriteUserSetting(_T("NavigateWithMouseWheel"), IsDlgButtonChecked(IDC_SET_WHEELNAV) ? _T("true") : _T("false"));
+	sp.WriteUserSetting(_T("WrapAroundFolder"), IsDlgButtonChecked(IDC_SET_WRAP) ? _T("true") : _T("false"));
+	sp.WriteUserSetting(_T("ForceGDIPlus"), IsDlgButtonChecked(IDC_SET_FORCEGDI) ? _T("true") : _T("false"));
+
+	// Performance numerics
+	CString sVal;
+	BOOL bOk;
+	int nQuality = (int)GetDlgItemInt(IDC_SET_JPEGQ, &bOk, FALSE);
+	if (bOk) { if (nQuality < 0) nQuality = 0; else if (nQuality > 100) nQuality = 100; sVal.Format(_T("%d"), nQuality); sp.WriteUserSetting(_T("JPEGSaveQuality"), sVal); }
+	int nCoresSel = ComboSel(GetDlgItem(IDC_SET_CPUCORES));
+	if (nCoresSel >= 0) { sVal.Format(_T("%d"), nCoresSel); sp.WriteUserSetting(_T("CPUCoresUsed"), sVal); }
+
+	// Background color as "R G B" (matches CSettingsProvider::GetColor parsing)
+	sVal.Format(_T("%d %d %d"), GetRValue(m_bgColor), GetGValue(m_bgColor), GetBValue(m_bgColor));
+	sp.WriteUserSetting(_T("BackgroundColor"), sVal);
+
 	EndDialog(IDOK);
 	return 0;
 }
@@ -169,5 +213,19 @@ LRESULT CSettingsDlg::OnEditIni(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndC
 	if (!sp.ExistsUserINI())
 		sp.CopyUserINIFromTemplate();
 	::ShellExecute(m_hWnd, _T("open"), sp.GetUserINIFileName(), NULL, NULL, SW_SHOWNORMAL);
+	return 0;
+}
+
+LRESULT CSettingsDlg::OnBgColor(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	static COLORREF s_custom[16] = { 0 };
+	CHOOSECOLOR cc;
+	ZeroMemory(&cc, sizeof(cc));
+	cc.lStructSize = sizeof(cc);
+	cc.hwndOwner = m_hWnd;
+	cc.rgbResult = m_bgColor;
+	cc.lpCustColors = s_custom;
+	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+	if (::ChooseColor(&cc))
+		m_bgColor = cc.rgbResult;
 	return 0;
 }
