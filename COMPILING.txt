@@ -4,6 +4,7 @@ JPEGView source code readme
 To compile JPEGView you need:
 
 - Visual Studio 2019 professional or community editions (JPEGView 32 and 64 bit versions supported)
+- Visual Studio 2022 (also builds; install the "MSVC v142 - VS 2019 C++ build tools" component, or build with /p:PlatformToolset=v143 / retarget the projects)
 - Visual Studio 2017 professional or community editions (JPEGView 32 and 64 bit versions supported)
   (Configured to build XP-compatible versions only, does not include all current features, does not include MSI installer)
 - Windows Template Library (WTL), Version 8.1+ (http://sourceforge.net/projects/wtl/) installed to

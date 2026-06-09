@@ -238,6 +238,9 @@ CRect CEXIFDisplay::PanelRect() {
 
 		m_nNoHistogramSize = CSize(m_size.cx - nExpansionX, m_size.cy - nExpansionY);
 		m_nTab1 = nMaxLength1 + m_nGap;
+
+		// A DC from ::GetDC must be released with ReleaseDC; detach so the CDC destructor does not DeleteDC it
+		::ReleaseDC(m_hWnd, dc.Detach());
 	}
 	return CRect(m_pos, m_size);
 }

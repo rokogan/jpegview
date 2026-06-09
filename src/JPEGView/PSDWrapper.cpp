@@ -310,7 +310,7 @@ CJPEGImage* PsdReader::ReadImage(LPCTSTR strFileName, bool& bOutOfMemory)
 		}
 
 		int nRowSize = Helpers::DoPadding(nWidth * nChannels, 4);
-		pPixelData = new(std::nothrow) char[nRowSize * nHeight];
+		pPixelData = new(std::nothrow) char[(size_t)nRowSize * nHeight];
 		if (pPixelData == NULL) {
 			bOutOfMemory = true;
 			ThrowIf(true);
@@ -321,7 +321,7 @@ CJPEGImage* PsdReader::ReadImage(LPCTSTR strFileName, bool& bOutOfMemory)
 		unsigned char* p = (unsigned char*)pBuffer;
 		if (nCompressionMethod == COMPRESSION_RLE) {
 			// Skip byte counts for scanlines
-			p += nHeight * nRealChannels * 2 * nVersion;
+			p += (size_t)nHeight * nRealChannels * 2 * nVersion;
 			unsigned char* pOffset = p;
 			for (unsigned channel = 0; channel < nChannels; channel++) {
 				unsigned rchannel;
@@ -347,9 +347,9 @@ CJPEGImage* PsdReader::ReadImage(LPCTSTR strFileName, bool& bOutOfMemory)
 							p += 1;
 
 							for (unsigned i = count; i < count + c; i++) {
-								unsigned char* scan = (unsigned char*)pPixelData + row * nRowSize + i * nChannels;
+								unsigned char* scan = (unsigned char*)pPixelData + (size_t)row * nRowSize + i * nChannels;
 								unsigned char* pixel = scan + rchannel;
-								ThrowIf(pixel >= (unsigned char*)pPixelData + nRowSize * nHeight);
+								ThrowIf(pixel >= (unsigned char*)pPixelData + (size_t)nRowSize * nHeight);
 								*pixel = value;
 							}
 						} else if (c < 128) {
@@ -360,9 +360,9 @@ CJPEGImage* PsdReader::ReadImage(LPCTSTR strFileName, bool& bOutOfMemory)
 								unsigned char value = *p;
 								p += 1;
 
-								unsigned char* scan = (unsigned char*)pPixelData + row * nRowSize + i * nChannels;
+								unsigned char* scan = (unsigned char*)pPixelData + (size_t)row * nRowSize + i * nChannels;
 								unsigned char* pixel = scan + rchannel;
-								ThrowIf(pixel >= (unsigned char*)pPixelData + nRowSize * nHeight);
+								ThrowIf(pixel >= (unsigned char*)pPixelData + (size_t)nRowSize * nHeight);
 								*pixel = value;
 							}
 						}
@@ -398,9 +398,9 @@ CJPEGImage* PsdReader::ReadImage(LPCTSTR strFileName, bool& bOutOfMemory)
 						unsigned char value = *p;
 						p += 1;
 
-						unsigned char* scan = (unsigned char*)pPixelData + row * nRowSize + count * nChannels;
+						unsigned char* scan = (unsigned char*)pPixelData + (size_t)row * nRowSize + count * nChannels;
 						unsigned char* pixel = scan + rchannel;
-						ThrowIf(pixel >= (unsigned char*)pPixelData + nRowSize * nHeight);
+						ThrowIf(pixel >= (unsigned char*)pPixelData + (size_t)nRowSize * nHeight);
 						*pixel = value;
 					}
 				}
@@ -414,7 +414,7 @@ CJPEGImage* PsdReader::ReadImage(LPCTSTR strFileName, bool& bOutOfMemory)
 			uint32* pImage32 = (uint32*)pPixelData;
 			// Blend K channel for CMYK images, alpha channel for RGBA images
 			COLORREF backgroundColor = nColorMode == MODE_CMYK ? 0 : CSettingsProvider::This().ColorTransparency();
-			for (int i = 0; i < nWidth * nHeight; i++)
+			for (size_t i = 0; i < (size_t)nWidth * nHeight; i++)
 				*pImage32++ = Helpers::AlphaBlendBackground(*pImage32, backgroundColor);
 		}
 
