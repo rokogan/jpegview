@@ -5,6 +5,8 @@
 #include "ProcessParams.h"
 #include "KeyMap.h"
 #include "SettingsProvider.h"
+#include <dwmapi.h>
+#pragma comment(lib, "dwmapi.lib")
 
 static void AddFlagText(CString& sText, LPCTSTR sFlagText, bool bFlag) {
 	sText += sFlagText;
@@ -123,29 +125,17 @@ namespace HelpersGUI {
 
 	void ApplyModernWindowChrome(HWND hWnd) {
 		// Dark/light immersive title bar (Win10 2004+) and rounded corners (Win11), following the OS theme.
-		// DwmSetWindowAttribute is loaded dynamically so there is no hard dependency on dwmapi and the call
-		// degrades to a harmless no-op on older Windows (unknown attributes just return a failure HRESULT).
-		typedef HRESULT (WINAPI *DwmSetWindowAttributeFn)(HWND, DWORD, LPCVOID, DWORD);
-		static DwmSetWindowAttributeFn pDwmSetWindowAttribute = NULL;
-		static bool bResolved = false;
-		if (!bResolved) {
-			bResolved = true;
-			HMODULE hDwm = ::LoadLibrary(_T("dwmapi.dll"));
-			if (hDwm != NULL)
-				pDwmSetWindowAttribute = (DwmSetWindowAttributeFn)::GetProcAddress(hDwm, "DwmSetWindowAttribute");
-		}
-		if (pDwmSetWindowAttribute == NULL)
-			return;
-
+		// The attribute values are passed numerically rather than via the SDK enum names (which vary by SDK
+		// version); DwmSetWindowAttribute returns a failure HRESULT for unknown attributes on older Windows.
+		const DWORD kUseImmersiveDarkMode = 20;       // 19 on early Win10 20H1 insider builds
+		const DWORD kUseImmersiveDarkModeOld = 19;
+		const DWORD kWindowCornerPreference = 33;     // Win11
+		const DWORD kCornerRound = 2;
 		BOOL bDark = ResolveDarkMode();
-		const DWORD DWMWA_USE_IMMERSIVE_DARK_MODE = 20;        // 19 on early Win10 20H1 insider builds
-		const DWORD DWMWA_USE_IMMERSIVE_DARK_MODE_OLD = 19;
-		const DWORD DWMWA_WINDOW_CORNER_PREFERENCE = 33;       // Win11
-		const DWORD DWMWCP_ROUND = 2;
-		if (pDwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &bDark, sizeof(bDark)) != S_OK)
-			pDwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE_OLD, &bDark, sizeof(bDark));
-		DWORD nCornerPref = DWMWCP_ROUND;
-		pDwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, &nCornerPref, sizeof(nCornerPref));
+		if (::DwmSetWindowAttribute(hWnd, kUseImmersiveDarkMode, &bDark, sizeof(bDark)) != S_OK)
+			::DwmSetWindowAttribute(hWnd, kUseImmersiveDarkModeOld, &bDark, sizeof(bDark));
+		DWORD nCornerPref = kCornerRound;
+		::DwmSetWindowAttribute(hWnd, kWindowCornerPreference, &nCornerPref, sizeof(nCornerPref));
 	}
 
 	HFONT DefaultGUIFont = NULL;
