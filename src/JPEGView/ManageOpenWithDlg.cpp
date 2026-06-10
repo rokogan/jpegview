@@ -62,6 +62,8 @@ LRESULT CManageOpenWithDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 
 	EnableControls(FALSE);
 
+	HelpersGUI::ApplyModernWindowChrome(m_hWnd);
+
 	return TRUE;
 }
 

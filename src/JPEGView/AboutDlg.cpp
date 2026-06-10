@@ -3,6 +3,7 @@
 #include "NLS.h"
 #include "SettingsProvider.h"
 #include "Helpers.h"
+#include "HelpersGUI.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Helpers
@@ -90,6 +91,8 @@ LRESULT CAboutDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPara
 	HICON hIconLarge = (HICON)::LoadImage(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME),
 		IMAGE_ICON, 64, 64, LR_DEFAULTCOLOR | LR_SHARED);
 	m_lblIcon.SetIcon(hIconLarge);
+
+	HelpersGUI::ApplyModernWindowChrome(m_hWnd);
 
 	return TRUE;
 }

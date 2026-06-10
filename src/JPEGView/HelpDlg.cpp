@@ -4,6 +4,7 @@
 #include "MainDlg.h"
 #include "HelpDisplayCtl.h"
 #include "MultiMonitorSupport.h"
+#include "HelpersGUI.h"
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Class implementation
@@ -39,6 +40,8 @@ LRESULT CHelpDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 
 	this->SetWindowText(CNLS::GetString(_T("JPEGView Help")));
 	CenterWindow();
+
+	HelpersGUI::ApplyModernWindowChrome(m_hWnd);
 
 	return TRUE;
 }

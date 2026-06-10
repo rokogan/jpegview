@@ -135,6 +135,8 @@ LRESULT CBatchCopyDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
 
 	m_nNumFiles = CreateItemList();
 
+	HelpersGUI::ApplyModernWindowChrome(m_hWnd);
+
 	return TRUE;
 }
 

@@ -10,3 +10,9 @@ public:
 	size_t operator( )(const LPCTSTR& Key) const;
 	bool operator( )(const LPCTSTR& _Key1, const LPCTSTR& _Key2) const;
 };
+
+// Equality predicate for usage as KeyEqual in std::unordered_map
+struct CEqualLPCTSTR
+{
+	bool operator()(const LPCTSTR& a, const LPCTSTR& b) const { return _tcscmp(a, b) == 0; }
+};

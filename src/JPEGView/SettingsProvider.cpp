@@ -692,7 +692,7 @@ LPCTSTR CSettingsProvider::ReadIniString(LPCTSTR key, LPCTSTR fileName, IniHashM
 		keyMap = new IniHashMap();
 		ReadIniFile(fileName, keyMap, pBuffer);
 	}
-	hash_map<LPCTSTR, LPCTSTR, CHashCompareLPCTSTR>::const_iterator iter;
+	IniHashMap::const_iterator iter;
 	iter = keyMap->find(key);
 	if (iter == keyMap->end()) {
 		return NULL; // not found
@@ -877,6 +877,8 @@ void CSettingsProvider::ReloadUserSettings() {
 	ReadWriteableINISettings();
 	m_sAppTheme = GetString(_T("AppTheme"), _T("System"));
 	m_bSingleInstance = GetBool(_T("SingleInstance"), false);
+	m_colorBackground = GetColor(_T("BackgroundColor"), 0);
+	m_colorTransparency = GetColor(_T("TransparencyColor"), m_colorBackground);
 }
 
 void CSettingsProvider::WriteDouble(LPCTSTR sKey, double dValue) {

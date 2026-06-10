@@ -4,6 +4,7 @@
 #include "NLS.h"
 #include "SettingsProvider.h"
 #include "Helpers.h"
+#include "HelpersGUI.h"
 
 int CCropSizeDlg::sm_nWidth = 0;
 int CCropSizeDlg::sm_nHeight = 0;
@@ -60,6 +61,8 @@ LRESULT CCropSizeDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
 	CString strHeight;
 	strHeight.Format(_T("%d"), sm_nHeight);
 	m_edtHeight.SetWindowText(strHeight);
+
+	HelpersGUI::ApplyModernWindowChrome(m_hWnd);
 
 	return TRUE;
 }

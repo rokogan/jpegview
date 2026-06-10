@@ -1,0 +1,29 @@
+name: "ASan (Debug x64)"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Init WTL submodule
+        run: git submodule update --init deps/WTL-sf
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: "[17.0,18.0)"
+          msbuild-architecture: x64
+
+      # EnableASAN=true is the MSBuild property that turns on /fsanitize=address
+      # for the MSVC compiler (VS2019 16.9+ / VS2022). This is a smoke build only:
+      # it verifies JPEGView compiles and links clean with AddressSanitizer.
+      # Actually running the ASan binary against a sample-image corpus to catch
+      # decoder overflows is a future step.
+      - name: Build JPEGView with ASan (Debug x64)
+        run: msbuild /target:JPEGView /property:Platform=x64 /property:Configuration=Debug /property:PlatformToolset=v143 /property:EnableASAN=true src\JPEGView.sln

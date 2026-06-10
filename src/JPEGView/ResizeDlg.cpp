@@ -3,6 +3,7 @@
 #include "NLS.h"
 #include "MaxImageDef.h"
 #include "Helpers.h"
+#include "HelpersGUI.h"
 
 double CResizeDlg::sm_dPercents = 100.0;
 int CResizeDlg::sm_nSelectedFilter = 2;
@@ -63,6 +64,8 @@ LRESULT CResizeDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPar
 	m_blockUpdate = false;
 
 	m_dLastPercent = sm_dPercents;
+
+	HelpersGUI::ApplyModernWindowChrome(m_hWnd);
 
 	return TRUE;
 }

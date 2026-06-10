@@ -3177,6 +3177,9 @@ void CMainDlg::ApplyLiveSettings() {
 		m_pNavPanelCtl->GetNavPanel()->GetBtnShowInfo()->SetActive(sp.ShowFileInfo());
 	}
 
+	// Navigation panel show/hide (the controller caches ShowNavPanel at construction)
+	m_pNavPanelCtl->SetActive(sp.ShowNavPanel());
+
 	// Slideshow transition (windowed member, mirrors the value set in the constructor)
 	m_eTransitionEffect = sp.SlideShowTransitionEffect();
 

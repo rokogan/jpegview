@@ -1,0 +1,111 @@
+name: "Fuzz decoders (best-effort)"
+
+# Best-effort, short libFuzzer runs against the untrusted-input decoders
+# (PNG / EXIF / TGA / BMP). The harnesses live in extras/fuzzing/ and are NOT
+# part of the MSVC solution.
+#
+# IMPORTANT:
+#   * This workflow is BEST-EFFORT and is NOT a required check. It is allowed
+#     to fail (continue-on-error) without blocking anything.
+#   * The clang build of the harnesses needs local include/link tuning
+#     (Windows SDK + ATL/WTL headers, vendored codec import libs, and the
+#     decoders' dependency .cpp files). The steps below are a starting point;
+#     expect to iterate on -I/-L paths and on which .cpp files each target
+#     needs to link. See extras/fuzzing/README.md for the full picture.
+#   * A ~60s run per target is only smoke-level coverage. Real discovery comes
+#     from long runs with a seeded corpus (run locally or in a dedicated
+#     fuzzing service).
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly, Monday 06:00 UTC
+    - cron: "0 6 * * 1"
+
+jobs:
+  fuzz:
+    runs-on: windows-2022
+    # Never block on this job: it is a discovery tool, not a gate.
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [png, exif, tga, bmp]
+    steps:
+      - uses: actions/checkout@v4
+
+      # EXIF/TGA/BMP harnesses include StdAfx.h (ATL/WTL); PNG includes it via
+      # PNGWrapper.cpp. WTL headers come from the submodule.
+      - name: Init WTL submodule
+        run: git submodule update --init deps/WTL-sf
+
+      # Use the clang that ships with Visual Studio for MSVC-ABI compatibility
+      # (clang-cl), so the Windows SDK and ATL/WTL headers resolve.
+      - name: Setup MSVC dev environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      # Best-effort compile + short run. This is deliberately tolerant: the
+      # exact include/link lines almost certainly need tuning for the
+      # ATL/WTL-dependent targets (exif/tga/bmp). The PNG target is the most
+      # self-contained and the most likely to build out of the box.
+      - name: Build and run fuzz_${{ matrix.target }} (~60s, best-effort)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $ErrorActionPreference = "Continue"
+          $target = "${{ matrix.target }}"
+          Set-Location extras/fuzzing
+          New-Item -ItemType Directory -Force corpus | Out-Null
+
+          # Common include dirs. Add Windows SDK / ATL / WTL include paths here
+          # if the compiler cannot find them automatically.
+          $inc = @(
+            "-I", "../../src/JPEGView",
+            "-I", "../../src/JPEGView/libpng-apng/include",
+            "-I", "../../deps/WTL-sf/Include"
+          )
+
+          # Per-target dependency .cpp files (the decoder + what it pulls in).
+          # These lists are a best-effort starting point; missing-symbol link
+          # errors mean another .cpp needs to be added.
+          switch ($target) {
+            "png"  { $srcs = @("../../src/JPEGView/PNGWrapper.cpp");
+                     $libs = @("../../src/JPEGView/libpng-apng/lib64/libpng16.lib",
+                               "../../src/JPEGView/libpng-apng/lib64/zlib.lib") }
+            "exif" { $srcs = @("../../src/JPEGView/EXIFReader.cpp",
+                               "../../src/JPEGView/Helpers.cpp");
+                     $libs = @() }
+            "tga"  { $srcs = @("../../src/JPEGView/ReaderTGA.cpp",
+                               "../../src/JPEGView/JPEGImage.cpp",
+                               "../../src/JPEGView/BasicProcessing.cpp",
+                               "../../src/JPEGView/Helpers.cpp");
+                     $libs = @() }
+            "bmp"  { $srcs = @("../../src/JPEGView/ReaderBMP.cpp",
+                               "../../src/JPEGView/JPEGImage.cpp",
+                               "../../src/JPEGView/BasicProcessing.cpp",
+                               "../../src/JPEGView/Helpers.cpp");
+                     $libs = @() }
+          }
+
+          $out = "fuzz_$target.exe"
+          Write-Host "::group::Compile fuzz_$target"
+          # clang-cl with ASan + libFuzzer. -D_WIN64 matches the x64 codec libs.
+          $args = @("/EHsc", "/std:c++17", "/D_WIN64",
+                    "/fsanitize=address", "/fsanitize=fuzzer") + $inc +
+                   @("fuzz_$target.cpp") + $srcs + $libs + @("/Fe:$out")
+          & clang-cl @args
+          $built = $LASTEXITCODE
+          Write-Host "::endgroup::"
+
+          if ($built -ne 0 -or -not (Test-Path $out)) {
+            Write-Host "::warning::fuzz_$target did not build (expected: needs local include/link tuning). Skipping run."
+            exit 0
+          }
+
+          Write-Host "::group::Run fuzz_$target (~60s)"
+          & ".\$out" corpus/ -max_total_time=60 -timeout=10
+          Write-Host "::endgroup::"
+          # Do not fail the job on a fuzzer finding here; this is best-effort.
+          exit 0
