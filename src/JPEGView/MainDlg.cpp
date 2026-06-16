@@ -32,6 +32,7 @@
 #include "CropSizeDlg.h"
 #include "ResizeDlg.h"
 #include "SettingsDlg.h"
+#include "CommandPaletteDlg.h"
 #include "ResizeFilter.h"
 #include "EXIFReader.h"
 #include "EXIFHelpers.h"
@@ -2267,6 +2268,14 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 			m_bColorPickerActive = !m_bColorPickerActive;
 			Invalidate(FALSE);
 			break;
+		case IDM_COMMAND_PALETTE: {
+			MouseOn();
+			CCommandPaletteDlg dlgPalette;
+			if (dlgPalette.DoModal(m_hWnd) == IDOK) {
+				ExecuteCommand(dlgPalette.GetChosenCommandId()); // re-dispatch the chosen command
+			}
+			break;
+		}
 	}
 	if (nCommand >= IDM_FIRST_USER_CMD && nCommand <= IDM_LAST_USER_CMD) {
 		ExecuteUserCommand(HelpersGUI::FindUserCommand(nCommand - IDM_FIRST_USER_CMD));

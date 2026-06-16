@@ -221,6 +221,7 @@
 #define IDM_ROTATE_270		9000		// :KeyMap: rotate image 270 deg
 #define IDM_ROTATE          9100		// :KeyMap: show free rotation dialog
 #define IDM_CHANGESIZE      9120		// :KeyMap: show dialog to change size of image
+#define IDM_COMMAND_PALETTE 9130		// :KeyMap: open the command palette (searchable list of all commands)
 #define IDM_PERSPECTIVE     9150		// :KeyMap: show perpective correction dialog
 #define IDM_MIRROR_H        9200		// :KeyMap: mirror image horizontally
 #define IDM_MIRROR_V        9300		// :KeyMap: mirror image vertically
@@ -345,6 +346,9 @@
 #ifndef IDC_STATIC
 #define IDC_STATIC                      (-1)
 #endif
+#define IDD_COMMANDPALETTE              9000
+#define IDC_CP_FILTER                   2200
+#define IDC_CP_LIST                     2201
 #define IDD_SETTINGS                    8000
 #define IDC_SET_THEME                   8001
 #define IDC_SET_SHOWFILENAME            8002

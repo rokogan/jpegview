@@ -58,6 +58,7 @@ Ctrl+Up                 IDM_ZOOM_INC
 Ctrl+A                  IDM_EXCHANGE_PROC_PARAMS
 O                       IDM_SHOW_ORIGINAL
 K                       IDM_COLOR_PICKER
+Ctrl+Shift+P            IDM_COMMAND_PALETTE
 Ctrl+C                  IDM_COPY
 Ctrl+Shift+C            IDM_COPY_PATH
 C                       IDM_SORT_CREATION_DATE
