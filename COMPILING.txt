@@ -24,6 +24,23 @@ Please note:
 NOTE: VS2019 is the current active JPEGView development environment.
 
 
+Local build / release script
+****************************
+
+This repo does not use GitHub Actions (CI was moved local to avoid Actions billing).
+Build and package from a normal PowerShell prompt with build.ps1:
+
+  .\build.ps1                                 # Release | x64 (default)
+  .\build.ps1 -Config Debug -Platform Win32   # any single config
+  .\build.ps1 -All                            # Debug + Release, Win32 + x64
+  .\build.ps1 -Package -Tag v1.4.0            # Release x64 + portable zip
+  .\build.ps1 -Package -Publish -Tag v1.4.0   # also publish a GitHub Release (needs the gh CLI)
+
+It auto-detects Visual Studio 2022 / Build Tools (toolset v143) via vswhere and builds the
+JPEGView and WICLoader projects. The Setup/MSI project is not built by the script (it needs the
+WiX toolset) - build the full solution in Visual Studio if you want the installer.
+
+
 Legacy Solution files
 *********************
 

@@ -26,6 +26,12 @@
 
 *.user
 
+# Local packaging output (build.ps1 -Package / -Publish)
+/JPEGView_*.zip
+
+# Stray local test scratch
+_navtest/
+
 # Visual C++ cache files
 ipch/
 *.aps
