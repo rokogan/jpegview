@@ -16,6 +16,7 @@ static const PaletteCommand kPaletteCommands[] = {
 	{ IDM_OPEN,                    _T("Open image...") },
 	{ IDM_SAVE,                    _T("Save processed image...") },
 	{ IDM_SAVE_SCREEN,             _T("Save image as displayed...") },
+	{ IDM_EXPORT,                  _T("Export (choose format and quality)...") },
 	{ IDM_RELOAD,                  _T("Reload image") },
 	{ IDM_EXPLORE,                 _T("Open containing folder in Explorer") },
 	{ IDM_PRINT,                   _T("Print image...") },

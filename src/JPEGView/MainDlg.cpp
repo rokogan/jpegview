@@ -33,6 +33,7 @@
 #include "ResizeDlg.h"
 #include "SettingsDlg.h"
 #include "CommandPaletteDlg.h"
+#include "ExportDlg.h"
 #include "ResizeFilter.h"
 #include "EXIFReader.h"
 #include "EXIFHelpers.h"
@@ -2276,6 +2277,17 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 			}
 			break;
 		}
+		case IDM_EXPORT:
+			if (m_pCurrentImage != NULL) {
+				MouseOn();
+				CExportDlg dlgExport;
+				if (dlgExport.DoModal(m_hWnd) == IDOK) {
+					m_sSaveExtension = dlgExport.GetExtension();   // default format for the Save-As below
+					m_bUseLosslessWEBP = dlgExport.IsLosslessWebP();
+					SaveImage(dlgExport.IsFullSize(), dlgExport.GetQuality());
+				}
+			}
+			break;
 	}
 	if (nCommand >= IDM_FIRST_USER_CMD && nCommand <= IDM_LAST_USER_CMD) {
 		ExecuteUserCommand(HelpersGUI::FindUserCommand(nCommand - IDM_FIRST_USER_CMD));
@@ -2348,7 +2360,7 @@ void CMainDlg::OpenFile(LPCTSTR sFileName, bool bAfterStartup) {
 	this->Invalidate(FALSE);
 }
 
-bool CMainDlg::SaveImage(bool bFullSize) {
+bool CMainDlg::SaveImage(bool bFullSize, int nQualityOverride) {
 	if (m_bMovieMode) {
 		return false;
 	}
@@ -2395,12 +2407,12 @@ bool CMainDlg::SaveImage(bool bFullSize) {
 		m_bUseLosslessWEBP = fileDlg.m_ofn.nFilterIndex == 6;
 		m_sSaveExtension = m_sSaveDirectory.Right(m_sSaveDirectory.GetLength() - m_sSaveDirectory.ReverseFind(_T('.')) - 1);
 		m_sSaveDirectory = m_sSaveDirectory.Left(m_sSaveDirectory.ReverseFind(_T('\\')) + 1);
-		return SaveImageNoPrompt(fileDlg.m_szFileName, bFullSize);
+		return SaveImageNoPrompt(fileDlg.m_szFileName, bFullSize, nQualityOverride);
 	}
 	return false;
 }
 
-bool CMainDlg::SaveImageNoPrompt(LPCTSTR sFileName, bool bFullSize) {
+bool CMainDlg::SaveImageNoPrompt(LPCTSTR sFileName, bool bFullSize, int nQualityOverride) {
 	if (m_bMovieMode) {
 		return false;
 	}
@@ -2409,8 +2421,8 @@ bool CMainDlg::SaveImageNoPrompt(LPCTSTR sFileName, bool bFullSize) {
 
 	HCURSOR hOldCursor = ::SetCursor(::LoadCursor(NULL, IDC_WAIT));	
 
-	if (CSaveImage::SaveImage(sFileName, m_pCurrentImage, *m_pImageProcParams, 
-		CreateDefaultProcessingFlags(), bFullSize, m_bUseLosslessWEBP)) {
+	if (CSaveImage::SaveImage(sFileName, m_pCurrentImage, *m_pImageProcParams,
+		CreateDefaultProcessingFlags(), bFullSize, m_bUseLosslessWEBP, true, nQualityOverride)) {
 		m_pFileList->Reload(); // maybe image is stored to current directory - needs reload
 		::SetCursor(hOldCursor);
 		Invalidate();

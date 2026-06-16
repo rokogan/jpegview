@@ -227,7 +227,7 @@ static void* CompressAndSave(LPCTSTR sFileName, CJPEGImage * pImage,
 }
 
 // pData must point to 24 bit BGR DIB
-static bool SaveWebP(LPCTSTR sFileName, void* pData, int nWidth, int nHeight, bool bUseLosslessWEBP) {
+static bool SaveWebP(LPCTSTR sFileName, void* pData, int nWidth, int nHeight, bool bUseLosslessWEBP, int nQualityOverride = -1) {
 	FILE *fptr = _tfopen(sFileName, _T("wb"));
 	if (fptr == NULL) {
 		return false;
@@ -237,7 +237,7 @@ static bool SaveWebP(LPCTSTR sFileName, void* pData, int nWidth, int nHeight, bo
 	try {
 		uint8* pOutput;
 		size_t nSize;
-		int nQuality = CSettingsProvider::This().WEBPSaveQuality();
+		int nQuality = (nQualityOverride >= 0) ? nQualityOverride : CSettingsProvider::This().WEBPSaveQuality();
 		pOutput = (uint8*)WebpReaderWriter::Compress((uint8*)pData, nWidth, nHeight, nSize, nQuality, bUseLosslessWEBP);
 		bSuccess = fwrite(pOutput, 1, nSize, fptr) == nSize;
 		fclose(fptr);
@@ -353,7 +353,7 @@ static bool SaveGDIPlus(LPCTSTR sFileName, EImageFormat eFileFormat, void* pData
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 bool CSaveImage::SaveImage(LPCTSTR sFileName, CJPEGImage * pImage, const CImageProcessingParams& procParams,
-			 EProcessingFlags eFlags, bool bFullSize, bool bUseLosslessWEBP, bool bCreateParameterDBEntry) {
+			 EProcessingFlags eFlags, bool bFullSize, bool bUseLosslessWEBP, bool bCreateParameterDBEntry, int nQualityOverride) {
 	pImage->EnableDimming(false);
 
 	CSize imageSize;
@@ -391,8 +391,8 @@ bool CSaveImage::SaveImage(LPCTSTR sFileName, CJPEGImage * pImage, const CImageP
 		// Save JPEG not over GDI+ - we want to keep the meta-data if there is meta-data
 		int nJPEGStreamLen;
 		bool tjFreeNeeded;
-		void* pCompressedJPEG = CompressAndSave(sFileName, pImage, pDIB24bpp, imageSize.cx, imageSize.cy, 
-			CSettingsProvider::This().JPEGSaveQuality(), nJPEGStreamLen, tjFreeNeeded, true, !bFullSize);
+		void* pCompressedJPEG = CompressAndSave(sFileName, pImage, pDIB24bpp, imageSize.cx, imageSize.cy,
+			(nQualityOverride >= 0) ? nQualityOverride : CSettingsProvider::This().JPEGSaveQuality(), nJPEGStreamLen, tjFreeNeeded, true, !bFullSize);
 		bSuccess = pCompressedJPEG != NULL;
 		if (bSuccess) {
 			nPixelHash = Helpers::CalculateJPEGFileHash(pCompressedJPEG, nJPEGStreamLen);
@@ -404,7 +404,7 @@ bool CSaveImage::SaveImage(LPCTSTR sFileName, CJPEGImage * pImage, const CImageP
 		}
 	} else {
 		if (eFileFormat == IF_WEBP) {
-			bSuccess = SaveWebP(sFileName, pDIB24bpp, imageSize.cx, imageSize.cy, bUseLosslessWEBP);
+			bSuccess = SaveWebP(sFileName, pDIB24bpp, imageSize.cx, imageSize.cy, bUseLosslessWEBP, nQualityOverride);
 		} else if (eFileFormat == IF_QOI) {
 			bSuccess = SaveQOI(sFileName, pDIB24bpp, imageSize.cx, imageSize.cy);
 		} else {

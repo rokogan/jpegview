@@ -13,8 +13,9 @@ public:
 	// If bFullSize is true, the image in its original size is processed and saved.
 	// If bFullSize is false, the image section as shown in the window is saved.
 	// Processing parameters and flags are ignored when bFullSize is false, the image is not reprocessed in this case.
+	// nQualityOverride: JPEG/WebP-lossy encode quality (0..100). Pass -1 to use the configured default.
 	static bool SaveImage(LPCTSTR sFileName, CJPEGImage * pImage, const CImageProcessingParams& procParams,
-		EProcessingFlags eFlags, bool bFullSize, bool bUseLosslessWEBP, bool bCreateParameterDBEntry = true);
+		EProcessingFlags eFlags, bool bFullSize, bool bUseLosslessWEBP, bool bCreateParameterDBEntry = true, int nQualityOverride = -1);
 
 	// Saves processed image in current window size as displayed on screen. Creates no parameter DB entry for the saved image.
 	// The file format is derived from the file ending of the specified file name.
