@@ -222,6 +222,17 @@ namespace Helpers {
 		return (padvalue - ((value & (padvalue - 1)))) & (padvalue - 1);
 	}
 
+	// Safely computes the number of bytes needed for an image buffer of the given dimensions,
+	// doing all multiplications in 64-bit/size_t so the result can never wrap (the cause of a
+	// whole family of decoder heap-overflow bugs where 'width*height*bpp' was computed in 32-bit
+	// while the pixel cap allowed products larger than fits in 32 bits).
+	// Enforces the same dimension/pixel-count policy as the decoders (MAX_IMAGE_DIMENSION,
+	// MAX_IMAGE_PIXELS). If padRowsToDWORD is true, each scanline is padded to a 4-byte boundary
+	// (the Windows DIB convention).
+	// Returns true and sets outBytes on success; returns false (outBytes = 0) if the dimensions
+	// are invalid or exceed the allowed limits.
+	bool SafeImageByteSize(int width, int height, int bytesPerPixel, bool padRowsToDWORD, size_t& outBytes);
+
 	// calculate CRC table for a CRC check
 	void CalcCRCTable(unsigned int crc_table[256]);
 

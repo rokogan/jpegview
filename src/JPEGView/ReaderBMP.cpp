@@ -36,7 +36,7 @@ static void ReadUInt(FILE* file, uint32* pUInt) {
 }
 
 CJPEGImage* CReaderBMP::ReadBmpImage(LPCTSTR strFileName, bool& bOutOfMemory) {
-	BMHEADER header;
+	BMHEADER header = { 0 }; // zero-init: the BMHEADER field reads below are not return-checked
 	BMINFOHEADER infoheader;
 	FILE *fptr;
 

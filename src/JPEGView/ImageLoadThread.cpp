@@ -224,6 +224,11 @@ CImageLoadThread::CImageLoadThread(void) : CWorkThread(true) {
 }
 
 CImageLoadThread::~CImageLoadThread(void) {
+	// Join the worker thread BEFORE freeing the caches it touches. The base ~CWorkThread() would
+	// otherwise join only after this derived destructor has already deleted the bitmap/decoder
+	// caches, leaving a use-after-free window if a load is still in flight at shutdown.
+	// Terminate() is idempotent (the base calls it only if not already terminated).
+	Terminate();
 	DeleteCachedGDIBitmap();
 	DeleteCachedWebpDecoder();
 	DeleteCachedPngDecoder();
@@ -269,6 +274,14 @@ void CImageLoadThread::ReleaseFile(LPCTSTR strFileName) {
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 // Called on the processing thread
+void CImageLoadThread::EvictOtherDecoderCaches(EImageFormat formatToKeep, bool bKeepGDIBitmap) {
+	if (!bKeepGDIBitmap) DeleteCachedGDIBitmap();
+	if (formatToKeep != IF_WEBP) DeleteCachedWebpDecoder();
+	if (formatToKeep != IF_PNG) DeleteCachedPngDecoder();
+	if (formatToKeep != IF_JXL) DeleteCachedJxlDecoder();
+	if (formatToKeep != IF_AVIF) DeleteCachedAvifDecoder();
+}
+
 void CImageLoadThread::ProcessRequest(CRequestBase& request) {
 	if (request.Type == CReleaseFileRequest::ReleaseFileRequest) {
 		CReleaseFileRequest& rq = (CReleaseFileRequest&)request;
@@ -291,109 +304,64 @@ void CImageLoadThread::ProcessRequest(CRequestBase& request) {
 	}
 
 	CRequest& rq = (CRequest&)request;
-	double dStartTime = Helpers::GetExactTickCount(); 
-	// Get image format and read the image
-	switch (GetImageFormat(rq.FileName)) {
+	double dStartTime = Helpers::GetExactTickCount();
+	// Get image format and read the image. Each dedicated decoder discards every other decoder's
+	// cache (a format keeps only its own stateful cache); the GDI+ fallback keeps the GDI+ bitmap.
+	EImageFormat eFormat = GetImageFormat(rq.FileName);
+	switch (eFormat) {
 		case IF_JPEG :
-			DeleteCachedGDIBitmap();
-			DeleteCachedWebpDecoder();
-			DeleteCachedPngDecoder();
-			DeleteCachedJxlDecoder();
-			DeleteCachedAvifDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadJPEGRequest(&rq);
 			break;
 		case IF_WindowsBMP :
-			DeleteCachedGDIBitmap();
-			DeleteCachedWebpDecoder();
-			DeleteCachedPngDecoder();
-			DeleteCachedJxlDecoder();
-			DeleteCachedAvifDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadBMPRequest(&rq);
 			break;
 		case IF_TGA :
-			DeleteCachedGDIBitmap();
-			DeleteCachedWebpDecoder();
-			DeleteCachedPngDecoder();
-			DeleteCachedJxlDecoder();
-			DeleteCachedAvifDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadTGARequest(&rq);
 			break;
 		case IF_WEBP:
-			DeleteCachedGDIBitmap();
-			DeleteCachedPngDecoder();
-			DeleteCachedJxlDecoder();
-			DeleteCachedAvifDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadWEBPRequest(&rq);
 			break;
 		case IF_PNG:
-			DeleteCachedGDIBitmap();
-			DeleteCachedWebpDecoder();
-			DeleteCachedJxlDecoder();
-			DeleteCachedAvifDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadPNGRequest(&rq);
 			break;
 #ifndef WINXP
 		case IF_JXL:
-			DeleteCachedGDIBitmap();
-			DeleteCachedWebpDecoder();
-			DeleteCachedPngDecoder();
-			DeleteCachedAvifDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadJXLRequest(&rq);
 			break;
 		case IF_AVIF:
-			DeleteCachedGDIBitmap();
-			DeleteCachedWebpDecoder();
-			DeleteCachedPngDecoder();
-			DeleteCachedJxlDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadAVIFRequest(&rq);
 			break;
 		case IF_HEIF:
-			DeleteCachedGDIBitmap();
-			DeleteCachedWebpDecoder();
-			DeleteCachedPngDecoder();
-			DeleteCachedJxlDecoder();
-			DeleteCachedAvifDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadHEIFRequest(&rq);
 			break;
 		case IF_PSD:
-			DeleteCachedGDIBitmap();
-			DeleteCachedWebpDecoder();
-			DeleteCachedPngDecoder();
-			DeleteCachedJxlDecoder();
-			DeleteCachedAvifDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadPSDRequest(&rq);
 			break;
 		case IF_CameraRAW:
-			DeleteCachedGDIBitmap();
-			DeleteCachedWebpDecoder();
-			DeleteCachedPngDecoder();
-			DeleteCachedJxlDecoder();
-			DeleteCachedAvifDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadRAWRequest(&rq);
 			break;
 #endif
 		case IF_QOI:
-			DeleteCachedGDIBitmap();
-			DeleteCachedWebpDecoder();
-			DeleteCachedPngDecoder();
-			DeleteCachedJxlDecoder();
-			DeleteCachedAvifDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadQOIRequest(&rq);
 			break;
 		case IF_WIC:
-			DeleteCachedGDIBitmap();
-			DeleteCachedWebpDecoder();
-			DeleteCachedPngDecoder();
-			DeleteCachedJxlDecoder();
-			DeleteCachedAvifDecoder();
+			EvictOtherDecoderCaches(eFormat);
 			ProcessReadWICRequest(&rq);
 			break;
 		default:
-			// try with GDI+
-			DeleteCachedWebpDecoder();
-			DeleteCachedPngDecoder();
-			DeleteCachedJxlDecoder();
-			DeleteCachedAvifDecoder();
+			// try with GDI+ (keep the GDI+ bitmap cache for the GDI+ path)
+			EvictOtherDecoderCaches(eFormat, true);
 			ProcessReadGDIPlusRequest(&rq);
 			break;
 	}
@@ -628,7 +596,7 @@ void CImageLoadThread::ProcessReadWEBPRequest(CRequest * request) {
 				uint32* pImage32 = (uint32*)pPixelData;
 				size_t nPixels = (size_t)nWidth * nHeight;
 				for (size_t i = 0; i < nPixels; i++)
-					*pImage32++ = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency());
+					*pImage32 = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency()), pImage32++;
 
 				if (bHasAnimation) {
 					m_sLastWebpFileName = sFileName;
@@ -714,7 +682,7 @@ void CImageLoadThread::ProcessReadPNGRequest(CRequest* request) {
 				uint32* pImage32 = (uint32*)pPixelData;
 				size_t nPixels = (size_t)nWidth * nHeight;
 				for (size_t i = 0; i < nPixels; i++)
-					*pImage32++ = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency());
+					*pImage32 = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency()), pImage32++;
 
 				request->Image = new CJPEGImage(nWidth, nHeight, pPixelData, pEXIFData, 4, 0, IF_PNG, bHasAnimation, request->FrameIndex, nFrameCount, nFrameTimeMs);
 			} else {
@@ -801,7 +769,7 @@ void CImageLoadThread::ProcessReadJXLRequest(CRequest* request) {
 				uint32* pImage32 = (uint32*)pPixelData;
 				size_t nPixels = (size_t)nWidth * nHeight;
 				for (size_t i = 0; i < nPixels; i++)
-					*pImage32++ = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency());
+					*pImage32 = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency()), pImage32++;
 
 				request->Image = new CJPEGImage(nWidth, nHeight, pPixelData, pEXIFData, 4, 0, IF_JXL, bHasAnimation, request->FrameIndex, nFrameCount, nFrameTimeMs);
 				free(pEXIFData);
@@ -878,7 +846,7 @@ void CImageLoadThread::ProcessReadAVIFRequest(CRequest* request) {
 				uint32* pImage32 = (uint32*)pPixelData;
 				size_t nPixels = (size_t)nWidth * nHeight;
 				for (size_t i = 0; i < nPixels; i++)
-					*pImage32++ = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency());
+					*pImage32 = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency()), pImage32++;
 
 				request->Image = new CJPEGImage(nWidth, nHeight, pPixelData, pEXIFData, 4, 0, IF_AVIF, bHasAnimation, request->FrameIndex, nFrameCount, nFrameTimeMs);
 				free(pEXIFData);
@@ -939,7 +907,7 @@ void CImageLoadThread::ProcessReadHEIFRequest(CRequest* request) {
 				uint32* pImage32 = (uint32*)pPixelData;
 				size_t nPixels = (size_t)nWidth * nHeight;
 				for (size_t i = 0; i < nPixels; i++)
-					*pImage32++ = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency());
+					*pImage32 = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency()), pImage32++;
 
 				request->Image = new CJPEGImage(nWidth, nHeight, pPixelData, pEXIFData, nBPP, 0, IF_HEIF, false, request->FrameIndex, nFrameCount, nFrameTimeMs);
 				free(pEXIFData);
@@ -1000,7 +968,7 @@ void CImageLoadThread::ProcessReadQOIRequest(CRequest* request) {
 					uint32* pImage32 = (uint32*)pPixelData;
 					size_t nPixels = (size_t)nWidth * nHeight;
 					for (size_t i = 0; i < nPixels; i++)
-						*pImage32++ = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency());
+						*pImage32 = Helpers::AlphaBlendBackground(*pImage32, CSettingsProvider::This().ColorTransparency()), pImage32++;
 				}
 				request->Image = new CJPEGImage(nWidth, nHeight, pPixelData, NULL, nBPP, 0, IF_QOI, false, 0, 1, 0);
 			}

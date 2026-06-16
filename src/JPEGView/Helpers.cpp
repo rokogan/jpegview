@@ -6,6 +6,7 @@
 #include "JPEGImage.h"
 #include "FileList.h"
 #include "SettingsProvider.h"
+#include "MaxImageDef.h"
 #include <math.h>
 
 namespace Helpers {
@@ -404,10 +405,44 @@ void* FindJPEGMarker(void* pJPEGStream, int nStreamLength, unsigned char nMarker
 
 void* FindEXIFBlock(void* pJPEGStream, int nStreamLength) {
 	uint8* pEXIFBlock = (uint8*)Helpers::FindJPEGMarker(pJPEGStream, nStreamLength, 0xE1);
-	if (pEXIFBlock != NULL && strncmp((const char*)(pEXIFBlock + 4), "Exif", 4) != 0) {
+	if (pEXIFBlock == NULL) {
 		return NULL;
 	}
+	// The APP1 block crosses a trust boundary: its declared length comes from the (untrusted)
+	// file. Validate here - the single point that knows the real buffer length - that the whole
+	// declared segment is present, so downstream consumers (CJPEGImage ctor, CEXIFReader) that
+	// trust pEXIF[2..3] cannot over-read past the file buffer.
+	ptrdiff_t nOffset = pEXIFBlock - (uint8*)pJPEGStream;
+	// Need marker (2) + length field (2) + "Exif" signature (4) = 8 bytes to even inspect it.
+	if (nOffset < 0 || nOffset + 8 > nStreamLength) {
+		return NULL;
+	}
+	if (strncmp((const char*)(pEXIFBlock + 4), "Exif", 4) != 0) {
+		return NULL;
+	}
+	// Total bytes consumed from the 0xFF 0xE1 marker = 2 (marker) + declared segment length.
+	int nDeclaredLen = pEXIFBlock[2] * 256 + pEXIFBlock[3];
+	if (nOffset + 2 + (ptrdiff_t)nDeclaredLen > nStreamLength) {
+		return NULL; // declared APP1 length runs past the end of the buffer - reject
+	}
 	return pEXIFBlock;
+}
+
+bool SafeImageByteSize(int width, int height, int bytesPerPixel, bool padRowsToDWORD, size_t& outBytes) {
+	outBytes = 0;
+	if (width <= 0 || height <= 0 || bytesPerPixel <= 0 ||
+		width > (int)MAX_IMAGE_DIMENSION || height > (int)MAX_IMAGE_DIMENSION) {
+		return false;
+	}
+	if ((double)width * height > MAX_IMAGE_PIXELS) {
+		return false;
+	}
+	size_t stride = (size_t)width * (size_t)bytesPerPixel;
+	if (padRowsToDWORD) {
+		stride = (stride + 3) & ~(size_t)3;
+	}
+	outBytes = stride * (size_t)height;
+	return true;
 }
 
 __int64 CalculateJPEGFileHash(void* pJPEGStream, int nStreamLength) {

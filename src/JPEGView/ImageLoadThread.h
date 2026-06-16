@@ -106,6 +106,9 @@ private:
 	void DeleteCachedPngDecoder();
 	void DeleteCachedJxlDecoder();
 	void DeleteCachedAvifDecoder();
+	// Discards every cached decoder/bitmap except the one for the format about to be loaded. Replaces
+	// the per-case hand-maintained eviction lists in the dispatch (which were already inconsistent).
+	void EvictOtherDecoderCaches(EImageFormat formatToKeep, bool bKeepGDIBitmap = false);
 
 	void ProcessReadJPEGRequest(CRequest * request);
 	void ProcessReadPNGRequest(CRequest * request);

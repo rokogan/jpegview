@@ -352,8 +352,9 @@ CParameterDBEntry* CParameterDB::FindEntry(__int64 nHash) {
 	if (nHash == m_LRUHash) {
 		return m_pLRUEntry;
 	}
-	int notUsed;
-	CParameterDBEntry* pEntry = FindEntryInternal(nHash, notUsed);
+	// O(1) lookup via the hash index instead of an O(n) linear scan over all entries.
+	std::unordered_map<__int64, CParameterDBEntry*>::const_iterator it = m_hashIndex.find(nHash);
+	CParameterDBEntry* pEntry = (it != m_hashIndex.end()) ? it->second : NULL;
 	m_LRUHash = nHash;
 	m_pLRUEntry = pEntry;
 	return pEntry;
@@ -376,6 +377,7 @@ bool CParameterDB::DeleteEntry(__int64 nHash) {
 			pEntry->SetHash(nHash);
 			return false;
 		}
+		RebuildIndex();
 		return true;
 	}
 	return false;
@@ -396,6 +398,7 @@ bool CParameterDB::AddEntry(const CParameterDBEntry& newEntry) {
 		pNewEntry->SetHash(0);
 		return false;
 	}
+	RebuildIndex();
 	m_LRUHash = pNewEntry->GetHash();
 	m_pLRUEntry = pNewEntry;
 	return true;
@@ -437,7 +440,9 @@ bool CParameterDB::MergeParamDB(LPCTSTR sParamDBName) {
 	}
 
 	CParameterDBEntry dummy;
-	return SaveToFile(-1, dummy); // this saves all entries
+	bool bSaved = SaveToFile(-1, dummy); // this saves all entries
+	RebuildIndex();
+	return bSaved;
 }
 
 void CParameterDB::BackupParamDB(HWND hWnd) {
@@ -489,10 +494,24 @@ CParameterDB::CParameterDB(void)
 	if (pBlock != NULL) {
 		m_blockList.push_back(pBlock);
 	}
+	RebuildIndex();
 }
 
 CParameterDB::~CParameterDB(void) {
 	// not implemented, never deleted (singleton)
+}
+
+void CParameterDB::RebuildIndex() {
+	m_hashIndex.clear();
+	for (std::list<DBBlock*>::iterator iter = m_blockList.begin(); iter != m_blockList.end(); iter++) {
+		DBBlock* pCurrentBlock = *iter;
+		for (int i = 0; i < pCurrentBlock->UsedEntries; i++) {
+			__int64 nThisHash = pCurrentBlock->Block[i].GetHash();
+			if (nThisHash != 0) {
+				m_hashIndex[nThisHash] = &(pCurrentBlock->Block[i]);
+			}
+		}
+	}
 }
 
 CParameterDBEntry* CParameterDB::FindEntryInternal(__int64 nHash, int& nIndex) {
@@ -611,6 +630,38 @@ bool CParameterDB::SaveToFile(int nIndex, const CParameterDBEntry & dbEntry) {
 		::CreateDirectory(Helpers::JPEGViewAppDataPath(), NULL);
 	}
 
+	if (nIndex < 0) {
+		// Full-DB rewrite (merge path): write to a temp file then atomically replace, so a crash or
+		// I/O error mid-write cannot corrupt the existing parameter DB (matches the INI save idiom).
+		CString sTempName = sParamDBName + _T(".tmp");
+		HANDLE hTemp = ::CreateFile(sTempName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (hTemp == INVALID_HANDLE_VALUE) {
+			HandleErrorAndCloseHandle(errorOpenFailed, sParamDBName, 0);
+			return false;
+		}
+		ParameterDBHeader header{ 0 };
+		header.nMagic1 = MAGIC_HEADER_1;
+		header.nMagic2 = MAGIC_HEADER_2;
+		header.nVersion = DB_FILE_VERSION;
+		DWORD numWritten;
+		bool bOk = ::WriteFile(hTemp, &header, sizeof(ParameterDBHeader), &numWritten, NULL) && numWritten == sizeof(ParameterDBHeader);
+		for (std::list<DBBlock*>::iterator iter = m_blockList.begin(); bOk && iter != m_blockList.end(); iter++) {
+			DBBlock* pCurrentBlock = *iter;
+			DWORD nBytes = sizeof(CParameterDBEntry) * pCurrentBlock->UsedEntries;
+			bOk = ::WriteFile(hTemp, pCurrentBlock->Block, nBytes, &numWritten, NULL) && numWritten == nBytes;
+		}
+		if (bOk) {
+			::FlushFileBuffers(hTemp);
+		}
+		::CloseHandle(hTemp);
+		if (!bOk || !::MoveFileEx(sTempName, sParamDBName, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+			::DeleteFile(sTempName);
+			HandleErrorAndCloseHandle(errorWriteFailed, sParamDBName, 0);
+			return false;
+		}
+		return true;
+	}
+
 	HANDLE hFile = ::CreateFile(sParamDBName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) {
 		HandleErrorAndCloseHandle(errorOpenFailed, sParamDBName, 0);
@@ -643,37 +694,18 @@ bool CParameterDB::SaveToFile(int nIndex, const CParameterDBEntry & dbEntry) {
 		return false;
 	}
 
-	bool bWriteAll = nIndex < 0;
-	if (bWriteAll) {
-		nIndex = 0;
-	}
-
-	// Seek to position of new entry to write
+	// Seek to the position of the entry to write (single-entry in-place update; the full-DB rewrite
+	// is handled atomically above).
 	if (::SetFilePointer(hFile, (nIndex + 1)*sizeof(CParameterDBEntry), NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
 		HandleErrorAndCloseHandle(errorWriteFailed, sParamDBName, hFile);
 		return false;
 	}
 
-	if (bWriteAll) {
-		// Write all entries
-		std::list<DBBlock*>::iterator iter;
-		for (iter = m_blockList.begin( ); iter != m_blockList.end( ); iter++ ) {
-			DBBlock* pCurrentBlock = *iter;
-			DWORD numWritten;
-			::WriteFile(hFile, pCurrentBlock->Block, sizeof(CParameterDBEntry) * pCurrentBlock->UsedEntries, &numWritten, NULL);
-			if (numWritten != sizeof(CParameterDBEntry) * pCurrentBlock->UsedEntries) {
-				HandleErrorAndCloseHandle(errorWriteFailed, sParamDBName, hFile);
-				return false;
-			}
-		}
-	} else {
-		// Write a single entry
-		DWORD numWritten;
-		::WriteFile(hFile, &dbEntry, sizeof(CParameterDBEntry), &numWritten, NULL);
-		if (numWritten != sizeof(CParameterDBEntry)) {
-			HandleErrorAndCloseHandle(errorWriteFailed, sParamDBName, hFile);
-			return false;
-		}
+	DWORD numWritten;
+	::WriteFile(hFile, &dbEntry, sizeof(CParameterDBEntry), &numWritten, NULL);
+	if (numWritten != sizeof(CParameterDBEntry)) {
+		HandleErrorAndCloseHandle(errorWriteFailed, sParamDBName, hFile);
+		return false;
 	}
 
 	// Close file and exit
@@ -696,7 +728,9 @@ bool CParameterDB::ConvertVersion1To2(HANDLE hFile, const CString& sFileName) {
 		delete[] pSource;
 		return false;
 	}
-	int nOldEntries = (int)nFileSize/32;
+	// Derive entry count from the bytes actually read, not the file size: a short read would
+	// otherwise convert uninitialized heap bytes into the persisted v2 records.
+	int nOldEntries = (int)numRead/32;
 	uint8* pTarget = new uint8[nOldEntries*sizeof(CParameterDBEntry)];
 	memset(pTarget, 0, nOldEntries*sizeof(CParameterDBEntry));
 	for (int i = 0; i < nOldEntries; i++) {

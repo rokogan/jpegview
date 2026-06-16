@@ -385,7 +385,9 @@ static RegResult ResetPermissionsForRegistryKey(LPCTSTR subKeyRelativeToHKCU)
 
 	const int MAX_SIZE_SEC_DESC = 1024;
 	SECURITY_DESCRIPTOR* pExistingSecDesc = (SECURITY_DESCRIPTOR*)new char[MAX_SIZE_SEC_DESC];
-	std::unique_ptr<char> auto_ptr_sec_desc((char*)pExistingSecDesc);
+	// Array form: new char[] must be freed with delete[] - std::unique_ptr<char> (scalar) would call
+	// scalar delete (undefined behavior for an array allocation).
+	std::unique_ptr<char[]> auto_ptr_sec_desc((char*)pExistingSecDesc);
 
 	// Get the existing DACL of the registry key
 	DWORD sizeDecDesc = MAX_SIZE_SEC_DESC;

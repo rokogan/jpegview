@@ -84,7 +84,13 @@ void* WebpReaderWriter::ReadImage(int& width,
 				ICCProfileTransform::DeleteTransform(transform);
 				return NULL;
 			}
-			WebPDecodeBGRAInto((const uint8_t*)buffer, sizebytes, pPixelData, size, nStride);
+			// Check the decode result: on a corrupt/truncated bitstream WebPDecodeBGRAInto returns
+			// NULL and leaves the buffer (partially) uninitialized - returning it would display stale heap.
+			if (WebPDecodeBGRAInto((const uint8_t*)buffer, sizebytes, pPixelData, size, nStride) == NULL) {
+				delete[] pPixelData;
+				ICCProfileTransform::DeleteTransform(transform);
+				return NULL;
+			}
 
 			// ICCP transform in place
 			ICCProfileTransform::DoTransform(transform, pPixelData, pPixelData, width, height);
@@ -98,7 +104,12 @@ void* WebpReaderWriter::ReadImage(int& width,
 		WebPAnimDecoderOptions anim_config;
 		WebPAnimDecoderOptionsInit(&anim_config);
 		anim_config.color_mode = MODE_BGRA;
-		uint8_t* cached_webp_bytes = new uint8_t[sizebytes];
+		uint8_t* cached_webp_bytes = new(std::nothrow) uint8_t[sizebytes];
+		if (cached_webp_bytes == NULL) {
+			outOfMemory = true;
+			ICCProfileTransform::DeleteTransform(transform);
+			return NULL;
+		}
 		memcpy(cached_webp_bytes, buffer, sizebytes);
 		cache.data.bytes = cached_webp_bytes;
 		cache.data.size = sizebytes;

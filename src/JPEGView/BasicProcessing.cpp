@@ -522,7 +522,7 @@ void* CBasicProcessing::ApplyLDC32bpp(CSize fullTargetSize, CPoint fullTargetOff
 		return Apply3ChannelLUT32bpp(clippedTargetSize.cx, clippedTargetSize.cy, pDIBPixels, pLUT);
 	}
 
-	uint32* pTarget = new(std::nothrow) uint32[clippedTargetSize.cx * clippedTargetSize.cy];
+	uint32* pTarget = new(std::nothrow) uint32[(size_t)clippedTargetSize.cx * clippedTargetSize.cy];
 	if (pTarget == NULL) return NULL;
 	CProcessingThreadPool& threadPool = CProcessingThreadPool::This();
 	CRequestLDC request(pDIBPixels, clippedTargetSize, pTarget, fullTargetSize, fullTargetOffset,
@@ -1314,7 +1314,7 @@ void* CBasicProcessing::RotateHQ(CPoint targetOffset, CSize targetSize, double d
 		return NULL;
 	}
 
-	uint8* pTargetPixels = new(std::nothrow) uint8[targetSize.cx * 4 * targetSize.cy];
+	uint8* pTargetPixels = new(std::nothrow) uint8[(size_t)targetSize.cx * 4 * targetSize.cy];
 	if (pTargetPixels == NULL) return NULL;
 
 	CProcessingThreadPool& threadPool = CProcessingThreadPool::This();
@@ -1465,7 +1465,7 @@ void* CBasicProcessing::TrapezoidHQ(CPoint targetOffset, CSize targetSize, const
 		return NULL;
 	}
 
-	uint8* pTargetPixels = new(std::nothrow) uint8[targetSize.cx * 4 * targetSize.cy];
+	uint8* pTargetPixels = new(std::nothrow) uint8[(size_t)targetSize.cx * 4 * targetSize.cy];
 	if (pTargetPixels == NULL) return NULL;
 
 	CProcessingThreadPool& threadPool = CProcessingThreadPool::This();
@@ -1498,7 +1498,7 @@ static uint8* ApplyFilter(int nSourceWidth, int nTargetWidth, int nHeight,
 						  int nFilterOffset,
 						  const uint8* pSource) {
 
-	uint8* pTarget = new(std::nothrow) uint8[nTargetWidth*4*nHeight];
+	uint8* pTarget = new(std::nothrow) uint8[(size_t)nTargetWidth*4*nHeight];
 	if (pTarget == NULL) return NULL;
 
 	// width of new image is (after rotation) : nHeight

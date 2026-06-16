@@ -104,10 +104,12 @@ static void ReadUserCommentTag(CString & strOut, uint8* ptr, uint8* pTIFFHeader,
 					bool bLE = bLittleEndian;
 					nSize -= 8;
 					sCodeDesc += 8;
-					if (sCodeDesc[0] == 0xFF && sCodeDesc[1] == 0xFE) {
+					// Cast to unsigned char: sCodeDesc is signed char, so a raw 'sCodeDesc[0] == 0xFF'
+					// is always false (byte 0xFF sign-extends to -1), making both BOM branches dead.
+					if ((unsigned char)sCodeDesc[0] == 0xFF && (unsigned char)sCodeDesc[1] == 0xFE) {
 						bLE = true;
 						nSize -= 2; sCodeDesc += 2;
-					} else if (sCodeDesc[0] == 0xFE && sCodeDesc[1] == 0xFF) {
+					} else if ((unsigned char)sCodeDesc[0] == 0xFE && (unsigned char)sCodeDesc[1] == 0xFF) {
 						bLE = false;
 						nSize -= 2; sCodeDesc += 2;
 					}
@@ -306,7 +308,9 @@ CEXIFReader::CEXIFReader(void* pApp1Block, EImageFormat eImageFormat)
 	m_bLittleEndian = bLittleEndian;
 
 	uint8* pIFD0 = pTIFFHeader + ReadUInt(pTIFFHeader + 4, bLittleEndian);
-	if (pIFD0 - m_pApp1 >= nApp1Size) {
+	// Reject a wrapped/negative offset too (on 32-bit builds pTIFFHeader + a near-0xFFFFFFFF offset
+	// wraps below m_pApp1, passing an upper-bound-only check) - matches the IFD1 path's guard.
+	if (pIFD0 - m_pApp1 >= nApp1Size || pIFD0 - m_pApp1 < 0) {
 		return;
 	}
 	// Read IFD0
@@ -374,7 +378,7 @@ CEXIFReader::CEXIFReader(void* pApp1Block, EImageFormat eImageFormat)
 		return;
 	}
 	uint8* pEXIFIFD = pTIFFHeader + nOffsetEXIF;
-	if (pEXIFIFD - m_pApp1 >= nApp1Size) {
+	if (pEXIFIFD - m_pApp1 >= nApp1Size || pEXIFIFD - m_pApp1 < 0) {
 		return;
 	}
 	nNumTags = ReadUShort(pEXIFIFD, bLittleEndian);
@@ -510,7 +514,7 @@ void CEXIFReader::ReadGPSData(uint8* pTIFFHeader, uint8* pTagGPSIFD, int nApp1Si
 		return;
 	}
 	uint8* pGPSIFD = pTIFFHeader + nOffsetGPS;
-	if (pGPSIFD - m_pApp1 >= nApp1Size) {
+	if (pGPSIFD - m_pApp1 >= nApp1Size || pGPSIFD - m_pApp1 < 0) {
 		return;
 	}
 	int nNumTags = ReadUShort(pGPSIFD, bLittleEndian);

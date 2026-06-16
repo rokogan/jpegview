@@ -372,9 +372,16 @@ bool CSaveImage::SaveImage(LPCTSTR sFileName, CJPEGImage * pImage, const CImageP
 		return false;
 	}
 
-	uint32 nSizeLinePadded = Helpers::DoPadding(imageSize.cx*3, 4);
-	uint32 nSizeBytes = nSizeLinePadded*imageSize.cy;
-	char* pDIB24bpp = new char[nSizeBytes];
+	size_t nSizeBytes;
+	if (!Helpers::SafeImageByteSize(imageSize.cx, imageSize.cy, 3, true, nSizeBytes)) {
+		pImage->EnableDimming(true);
+		return false;
+	}
+	char* pDIB24bpp = new(std::nothrow) char[nSizeBytes];
+	if (pDIB24bpp == NULL) {
+		pImage->EnableDimming(true);
+		return false;
+	}
 	CBasicProcessing::Convert32bppTo24bppDIB(imageSize.cx, imageSize.cy, pDIB24bpp, pDIB32bpp, false);
 
 	EImageFormat eFileFormat = Helpers::GetImageFormat(sFileName);

@@ -414,8 +414,9 @@ CJPEGImage* PsdReader::ReadImage(LPCTSTR strFileName, bool& bOutOfMemory)
 			uint32* pImage32 = (uint32*)pPixelData;
 			// Blend K channel for CMYK images, alpha channel for RGBA images
 			COLORREF backgroundColor = nColorMode == MODE_CMYK ? 0 : CSettingsProvider::This().ColorTransparency();
-			for (size_t i = 0; i < (size_t)nWidth * nHeight; i++)
-				*pImage32++ = Helpers::AlphaBlendBackground(*pImage32, backgroundColor);
+			for (size_t i = 0; i < (size_t)nWidth * nHeight; i++) {
+				*pImage32 = Helpers::AlphaBlendBackground(*pImage32, backgroundColor); pImage32++;
+			}
 		}
 
 		Image = new CJPEGImage(nWidth, nHeight, pPixelData, pEXIFData, nChannels, 0, IF_PSD, false, 0, 1, 0);

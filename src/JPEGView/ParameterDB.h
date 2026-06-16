@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProcessParams.h"
+#include <unordered_map>
 
 #pragma pack(push)
 
@@ -123,9 +124,14 @@ private:
 
 	static CParameterDB* sm_instance;
 	std::list<DBBlock*> m_blockList;
+	// O(1) hash -> entry lookup for the hot read path (FindEntry runs on every image open). Rebuilt
+	// from m_blockList after every mutation so it cannot desync. Entry pointers are stable because
+	// DBBlock arrays are never reallocated or freed (the DB is a never-deleted singleton).
+	std::unordered_map<__int64, CParameterDBEntry*> m_hashIndex;
 	__int64 m_LRUHash;
 	CParameterDBEntry* m_pLRUEntry;
 
+	void RebuildIndex();
 	CParameterDBEntry* FindEntryInternal(__int64 nHash, int& nIndex);
 	CParameterDBEntry* AllocateNewEntry(int& nIndex);
 	DBBlock* LoadFromFile(const CString& sParamDBName, bool bConvertOldFormats);

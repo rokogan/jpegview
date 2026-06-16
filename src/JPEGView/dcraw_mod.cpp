@@ -1387,14 +1387,17 @@ void CLASS ppm_thumb (CJPEGImage** Image, bool& bOutOfMemory)
         return;
     }
 
-    thumb_length = thumb_width*thumb_height*3;
-    thumb = (byte *) malloc (thumb_length);
+    // All size math in size_t: the pixel cap (MAX_IMAGE_PIXELS) allows products that overflow
+    // 32-bit int once multiplied by the 3/4 channel stride, so a 32-bit thumb_size could wrap to
+    // a tiny value and the copy loop below would then write far past the allocation.
+    size_t nSrcBytes = (size_t)thumb_width * (size_t)thumb_height * 3;
+    thumb = (byte *) malloc (nSrcBytes);
     if (thumb == NULL) { bOutOfMemory = true; return; }
-    fread(thumb, 1, thumb_length, ifp);
+    fread(thumb, 1, nSrcBytes, ifp);
     bOutOfMemory = false;
 
-    int pwidth = RGBWIDTH(thumb_width);
-    int thumb_size = pwidth * thumb_height;
+    size_t pwidth = RGBWIDTH((size_t)thumb_width);
+    size_t thumb_size = pwidth * (size_t)thumb_height;
     byte *data = new(std::nothrow) byte[thumb_size];
     if (data == NULL) {
         bOutOfMemory = true;
@@ -1403,9 +1406,9 @@ void CLASS ppm_thumb (CJPEGImage** Image, bool& bOutOfMemory)
     } else {
         for (int i = 0; i < thumb_height; i++)
         {
-            byte *p = data + i * pwidth + 2;
+            byte *p = data + (size_t)i * pwidth + 2;
             byte *pm = p + thumb_width * 3;
-            byte *d = thumb + i * (thumb_width * 3);
+            byte *d = thumb + (size_t)i * (thumb_width * 3);
 
             while (p < pm)
             {
@@ -1451,16 +1454,18 @@ void CLASS ppm16_thumb(CJPEGImage** Image, bool& bOutOfMemory)
         return;
     }
 
-    thumb_length = thumb_width*thumb_height*3;
-    thumb = (byte *) malloc (thumb_length*2);
-    merror(thumb, "ppm16_thumb()");
-    read_shorts((ushort *)thumb, thumb_length);
+    // All size math in size_t (see ppm_thumb for the overflow rationale). read_shorts writes
+    // 2 bytes per element, so the source buffer is nSrcBytes*2 and we read nSrcBytes shorts.
+    size_t nSrcBytes = (size_t)thumb_width * (size_t)thumb_height * 3;
+    thumb = (byte *) malloc (nSrcBytes * 2);
+    if (thumb == NULL) { bOutOfMemory = true; return; } // was merror() -> longjmp; fail gracefully
+    read_shorts((ushort *)thumb, (int)nSrcBytes); // nSrcBytes bounded by the successful malloc above
     bOutOfMemory = false;
-    for (int i = 0; i < thumb_length; i++)
+    for (size_t i = 0; i < nSrcBytes; i++)
         thumb[i] = ((ushort *)thumb)[i] >> 8;
 
-    int pwidth = RGBWIDTH(thumb_width);
-    int thumb_size = pwidth * thumb_height;
+    size_t pwidth = RGBWIDTH((size_t)thumb_width);
+    size_t thumb_size = pwidth * (size_t)thumb_height;
     byte *data = new(std::nothrow) byte[thumb_size];
     if (data == NULL) {
         bOutOfMemory = true;
@@ -1470,9 +1475,9 @@ void CLASS ppm16_thumb(CJPEGImage** Image, bool& bOutOfMemory)
 
     for (int i = 0; i < thumb_height; i++)
     {
-        byte* p = data + i * pwidth + 2;
+        byte* p = data + (size_t)i * pwidth + 2;
         byte* pm = p + thumb_width * 3;
-        byte* d = thumb + i * (thumb_width * 3);
+        byte* d = thumb + (size_t)i * (thumb_width * 3);
 
         while (p < pm)
         {
@@ -6141,8 +6146,9 @@ int CLASS parse_tiff_ifd (int base)
 	break;
       case 50454:			/* Sinar tag */
       case 50455:
-	if (!(cbuf = (char *) malloc(len))) break;
+	if (len == (unsigned)-1 || !(cbuf = (char *) malloc(len+1))) break; // +1 to NUL-terminate
 	fread (cbuf, 1, len, ifp);
+	cbuf[len] = 0; // so the strncmp/strchr/sscanf scans below cannot read past the buffer
 	for (cp = cbuf-1; cp && cp < cbuf+len; cp = strchr(cp,'\n'))
 	  if (!strncmp (++cp,"Neutral ",8))
 	    sscanf (cp+8, "%f %f %f", cam_mul, cam_mul+1, cam_mul+2);
@@ -10644,23 +10650,30 @@ void CLASS jpeg_thumb(CJPEGImage** Image, bool& bOutOfMemory)
 
     *Image = NULL;
 
+    // thumb_length is attacker-controlled; the downstream helpers take a signed int length, so reject
+    // oversize values rather than letting them narrow to a negative count.
+    if (thumb_length == 0 || thumb_length > 0x7fffffffu) {
+        return;
+    }
     thumb = (char *) malloc (thumb_length);
     if (thumb == NULL) {
         bOutOfMemory = true;
         return;
     }
 
-    fread(thumb, 1, thumb_length, ifp);
+    // Use the actually-read byte count so a short/truncated read does not feed uninitialized heap
+    // to the JPEG decoder / EXIF & hash / comment scanners.
+    int nThumbLen = (int)fread(thumb, 1, thumb_length, ifp);
 
     int nWidth, nHeight, nBPP;
     TJSAMP eChromoSubSampling;
-    void* pPixelData = TurboJpeg::ReadImage(nWidth, nHeight, nBPP, eChromoSubSampling, bOutOfMemory, thumb, thumb_length);
+    void* pPixelData = TurboJpeg::ReadImage(nWidth, nHeight, nBPP, eChromoSubSampling, bOutOfMemory, thumb, nThumbLen);
 
     if (pPixelData != NULL && (nBPP == 3 || nBPP == 1))
     {
-        *Image = new CJPEGImage(nWidth, nHeight, pPixelData, Helpers::FindEXIFBlock(thumb, thumb_length), nBPP,
-            Helpers::CalculateJPEGFileHash(thumb, thumb_length), IF_JPEG_Embedded, false, 0, 1, 0, NULL, false, CreateRawMetadata());
-        (*Image)->SetJPEGComment(Helpers::GetJPEGComment(thumb, thumb_length));
+        *Image = new CJPEGImage(nWidth, nHeight, pPixelData, Helpers::FindEXIFBlock(thumb, nThumbLen), nBPP,
+            Helpers::CalculateJPEGFileHash(thumb, nThumbLen), IF_JPEG_Embedded, false, 0, 1, 0, NULL, false, CreateRawMetadata());
+        (*Image)->SetJPEGComment(Helpers::GetJPEGComment(thumb, nThumbLen));
         (*Image)->SetJPEGChromoSampling(eChromoSubSampling);
     }
     else if (bOutOfMemory)
@@ -10681,12 +10694,23 @@ int dcraw_main (LPCTSTR filename, CJPEGImage** Image, bool& bOutOfMemory)
     image = 0;
     oprof = 0;
     meta_data = 0;
+    ifp = NULL;
 
     int lenFileName = (int)_tcslen(filename) * 2;
     CHAR *fn = new CHAR[lenFileName];
     WideCharToMultiByte(CP_ACP, 0, filename, (int)_tclen(filename), fn, lenFileName, NULL, NULL);
 
     ifname = fn;
+
+    // Arm the longjmp target that merror()/derror() jump to. Without this, an out-of-memory or
+    // data error inside identify()/decode would longjmp through an unset global jmp_buf (undefined
+    // behavior / crash) on this production entry - the only other setjmp lives in the unused CLI main().
+    if (int jumpCode = setjmp(failure)) {
+        bOutOfMemory = (jumpCode == 1); // 1 = out of memory (merror); 2/3 = data error -> failed load
+        status = 1;
+        goto cleanup;
+    }
+
     if (!(ifp = _tfopen(filename, _T("rb")))) {
       goto cleanup;
     }
@@ -10702,14 +10726,14 @@ int dcraw_main (LPCTSTR filename, CJPEGImage** Image, bool& bOutOfMemory)
     }
 
     (*write_fun)(Image, bOutOfMemory);
-    fclose(ifp);
 
 cleanup:
+    if (ifp) { fclose(ifp); ifp = NULL; }
     if (meta_data) free (meta_data);
     if (oprof) free (oprof);
     if (image) free (image);
 
-    delete fn;
+    delete[] fn;
 
     return status;
 }

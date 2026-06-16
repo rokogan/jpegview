@@ -140,7 +140,9 @@ void* PngReader::ReadNextFrame(void** exif_chunk, png_uint_32* exif_size)
 		for (j = 0; j < cache.h0; j++)
 			memcpy(cache.rows_image[j + cache.y0] + cache.x0 * 4, cache.rows_frame[j], cache.w0 * 4);
 
-	void* pixels = malloc((size_t)cache.width * cache.height * cache.channels);
+	// new[] (not malloc): CJPEGImage takes ownership of this buffer and frees it with delete[]
+	// (JPEGImage.cpp ~delete[] m_pOrigPixels) - malloc/delete[] would be undefined behavior.
+	void* pixels = new(std::nothrow) unsigned char[(size_t)cache.width * cache.height * cache.channels];
 	if (pixels == NULL)
 		return NULL;
 	for (j = 0; j < cache.height; j++)

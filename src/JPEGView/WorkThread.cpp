@@ -15,7 +15,9 @@ CWorkThread::CWorkThread(bool bCoInitialize)
 	::InitializeCriticalSection(&m_csList);
 	m_wakeUp = ::CreateEvent(0, TRUE, FALSE, NULL);
 
-	m_hThread = (HANDLE)_beginthread(ThreadFunc, 0, this);
+	// _beginthreadex (not _beginthread): returns a real, caller-owned HANDLE that the CRT does NOT
+	// auto-close, so it is safe to WaitForSingleObject/TerminateThread on it and we CloseHandle it once.
+	m_hThread = (HANDLE)_beginthreadex(NULL, 0, ThreadFunc, this, 0, NULL);
 }
 
 CWorkThread::~CWorkThread(void) {
@@ -50,11 +52,12 @@ void CWorkThread::ProcessAsync(CRequestBase* pRequest) {
 	::SetEvent(m_wakeUp);
 }
 
-void CWorkThread::Terminate() { 
+void CWorkThread::Terminate() {
 	m_bTerminate = true;
 	if (m_hThread != NULL) {
 		::SetEvent(m_wakeUp);
 		::WaitForSingleObject(m_hThread, 10000);
+		::CloseHandle(m_hThread);
 		m_hThread = NULL;
 	}
 }
@@ -67,6 +70,7 @@ void CWorkThread::Abort() {
 				::TerminateThread(m_hThread, 1);
 				::WaitForSingleObject(m_hThread, 100);
 			}
+			::CloseHandle(m_hThread);
 			m_hThread = NULL;
 		}
 	} catch (...) {
@@ -78,7 +82,7 @@ void CWorkThread::Abort() {
 // Private
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-void CWorkThread::ThreadFunc(void* arg) {
+unsigned __stdcall CWorkThread::ThreadFunc(void* arg) {
 
 	CWorkThread* thisPtr = (CWorkThread*) arg;
 	if (thisPtr->m_bCoInitialize) {
@@ -134,7 +138,8 @@ void CWorkThread::ThreadFunc(void* arg) {
 	if (thisPtr->m_bCoInitialize) {
 		::CoUninitialize();
 	}
-	_endthread();
+	_endthreadex(0);
+	return 0;
 }
 
 void CWorkThread::DeleteAllRequestsMarkedForDeletion(CWorkThread* thisPtr) {

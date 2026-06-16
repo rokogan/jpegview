@@ -119,6 +119,9 @@ CJPEGImage* CReaderTGA::ReadTgaImage(LPCTSTR strFileName, COLORREF backgroundCol
 		fclose(pFile);
 		return NULL;
 	}
+	// Zero the buffer: the per-pixel freads below are not return-checked, so on a truncated file the
+	// unwritten tail must read back as black rather than leaking uninitialized heap into the image.
+	memset(pImageData, 0, numberOfBytesRequired);
 
 	// Now we move the file pointer to the pixel data
 	if (fseek(pFile, length, SEEK_CUR) != 0)
@@ -348,9 +351,11 @@ CJPEGImage* CReaderTGA::ReadTgaImage(LPCTSTR strFileName, COLORREF backgroundCol
 		uint32* pImage32 = (uint32*)pImageData;
 		if (IsAlphaChannelValid(width, height, (uint32*)pImageData))
 		{
+			// Index explicitly: '*p++ = f(*p)' reads and modifies the same pointer unsequenced (UB)
+			// and would also read one element past the buffer on the last iteration.
 			for (int i = 0; i < width*height; i++)
 			{
-				*pImage32++ = Helpers::AlphaBlendBackground(*pImage32, backgroundColor | ALPHA_OPAQUE);
+				pImage32[i] = Helpers::AlphaBlendBackground(pImage32[i], backgroundColor | ALPHA_OPAQUE);
 			}
 		}
 		else
@@ -358,7 +363,7 @@ CJPEGImage* CReaderTGA::ReadTgaImage(LPCTSTR strFileName, COLORREF backgroundCol
 			// no valid alpha channel - set all A to 255
 			for (int i = 0; i < width*height; i++)
 			{
-				*pImage32++ = *pImage32 | ALPHA_OPAQUE;
+				pImage32[i] = pImage32[i] | ALPHA_OPAQUE;
 			}
 		}
 	}

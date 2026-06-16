@@ -573,7 +573,7 @@ void CPrintDlg::SetupDataForCurrentPrinter() {
 		for (int i = 0; i < m_numberOfPapers; i++) {
 			m_cbPaper.AddString(paperNames[i]);
 		}
-		delete (char*)paperNames;
+		delete[] (char*)paperNames; // allocated with new char[] in GetPaperNames - must use delete[]
 
 		int index;
 		if ((m_pDeviceMode->dmFields & DM_PAPERSIZE) != 0 && (index = GetIndexOfPaper(m_pDeviceMode->dmPaperSize)) >= 0) {
@@ -594,7 +594,7 @@ void CPrintDlg::SetupDataForCurrentPrinter() {
 		for (int i = 0; i < m_numberOfTrays; i++) {
 			m_cbPaperTray.AddString(trayNames[i]);
 		}
-		delete (char*)trayNames;
+		delete[] (char*)trayNames; // allocated with new char[] in GetTrayNames - must use delete[]
 
 		if ((m_pDeviceMode->dmFields & DM_DEFAULTSOURCE) != 0) {
 			for (int i = 0; i < m_numberOfTrays; i++) {

@@ -62,10 +62,14 @@ __declspec(dllexport) byte* __stdcall LoadImageWithWIC(LPCWSTR fileName, Allocat
 	if (frameCount > 0) {
 		IFS(piDecoder->GetFrame(0, &piBitmapFrame));
 		if (SUCCEEDED(hr)) {
-			piBitmapFrame->GetSize(width, height);
-			if (*width <= MAX_IMAGE_DIMENSION && *height <= MAX_IMAGE_DIMENSION) {
-				if ((double)*width * *height <= MAX_IMAGE_PIXELS) {
-					bitmapBuffer = allocator(*width * *height * 4);
+			*width = 0; *height = 0;
+			IFS(piBitmapFrame->GetSize(width, height));
+			if (SUCCEEDED(hr) && *width <= MAX_IMAGE_DIMENSION && *height <= MAX_IMAGE_DIMENSION) {
+				// Compute the byte size in 64-bit so the *4 cannot wrap, and keep it within the
+				// signed-int allocator contract.
+				size_t sizeBytes = (size_t)*width * (size_t)*height * 4;
+				if ((double)*width * *height <= MAX_IMAGE_PIXELS && sizeBytes <= 0x7fffffffu) {
+					bitmapBuffer = allocator((int)sizeBytes);
 					if (bitmapBuffer != NULL) {
 						hr = CopyWICBitmapToBuffer(piBitmapFrame, bitmapBuffer);
 						if (!SUCCEEDED(hr)) {

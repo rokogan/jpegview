@@ -87,6 +87,7 @@ CJPEGImage* CClipboard::PasteImageFromClipboard(HWND hWnd, const CImageProcessin
 	if (handle != NULL) {
 		BITMAPINFO* pbmInfo = (BITMAPINFO*)::GlobalLock(handle);
 		if (pbmInfo != NULL) {
+			SIZE_T nBlockSize = ::GlobalSize(handle);
 			int nNumColors = pbmInfo->bmiHeader.biClrUsed;
 			if (nNumColors == 0 && pbmInfo->bmiHeader.biBitCount <= 8) {
 				nNumColors = 1 << pbmInfo->bmiHeader.biBitCount;
@@ -94,9 +95,22 @@ CJPEGImage* CClipboard::PasteImageFromClipboard(HWND hWnd, const CImageProcessin
 			if (pbmInfo->bmiHeader.biCompression == BI_BITFIELDS) {
 				nNumColors = 3;
 			}
-			char* pDIBBits = (char*)pbmInfo + pbmInfo->bmiHeader.biSize + nNumColors*sizeof(RGBQUAD);
+			// The CF_DIB block is untrusted (any process can set the clipboard). Validate every header
+			// field that locates the pixel bits against the actual block size before dereferencing, so a
+			// crafted biSize/biClrUsed cannot push pDIBBits (and GDI+'s reads) out of bounds.
+			DWORD biSize = pbmInfo->bmiHeader.biSize;
+			int biWidth = pbmInfo->bmiHeader.biWidth;
+			int biHeight = abs(pbmInfo->bmiHeader.biHeight);
+			int biBitCount = pbmInfo->bmiHeader.biBitCount;
+			size_t nHeaderBytes = (size_t)biSize + (size_t)nNumColors * sizeof(RGBQUAD);
+			size_t nRowBytes = (biBitCount > 0) ? (((size_t)biWidth * biBitCount + 31) / 32) * 4 : 0;
+			size_t nPixelBytes = nRowBytes * (size_t)biHeight;
+			char* pDIBBits = (char*)pbmInfo + nHeaderBytes;
 
-			if (pbmInfo->bmiHeader.biWidth >= 0 && pbmInfo->bmiHeader.biWidth <= MAX_IMAGE_DIMENSION && abs(pbmInfo->bmiHeader.biHeight) <= MAX_IMAGE_DIMENSION) {
+			if (nNumColors >= 0 && biBitCount > 0 &&
+				biSize >= sizeof(BITMAPINFOHEADER) && biSize <= nBlockSize &&
+				biWidth >= 0 && biWidth <= MAX_IMAGE_DIMENSION && biHeight <= MAX_IMAGE_DIMENSION &&
+				nHeaderBytes <= nBlockSize && nPixelBytes <= nBlockSize - nHeaderBytes) {
 				Gdiplus::Bitmap* pBitmap = new Gdiplus::Bitmap(pbmInfo, pDIBBits);
 				if (pBitmap->GetLastStatus() == Gdiplus::Ok) {
 					Gdiplus::Rect bmRect(0, 0, pBitmap->GetWidth(), pBitmap->GetHeight());
@@ -127,10 +141,14 @@ void CClipboard::DoCopy(HWND hWnd, int nWidth, int nHeight, const void* pSourceI
 	}
 	::EmptyClipboard();
 
-	// get needed size of memory block
-	uint32 nSizeLinePadded = Helpers::DoPadding(nWidth*3, 4);
-	uint32 nSizeBytes = sizeof(BITMAPINFO) + nSizeLinePadded * nHeight;
-	
+	// get needed size of memory block (64-bit math so the byte size cannot wrap for large images)
+	size_t nPixelBytes;
+	if (!Helpers::SafeImageByteSize(nWidth, nHeight, 3, true, nPixelBytes)) {
+		::CloseClipboard();
+		return;
+	}
+	size_t nSizeBytes = sizeof(BITMAPINFO) + nPixelBytes;
+
 	// Allocate memory
 	HGLOBAL hMem = ::GlobalAlloc(GMEM_MOVEABLE, nSizeBytes);
 	if (hMem == NULL) {
