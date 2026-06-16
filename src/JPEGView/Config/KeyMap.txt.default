@@ -60,6 +60,7 @@ O                       IDM_SHOW_ORIGINAL
 K                       IDM_COLOR_PICKER
 Ctrl+Shift+P            IDM_COMMAND_PALETTE
 Ctrl+E                  IDM_EXPORT
+Ctrl+Shift+T            IDM_OCR
 Ctrl+C                  IDM_COPY
 Ctrl+Shift+C            IDM_COPY_PATH
 C                       IDM_SORT_CREATION_DATE

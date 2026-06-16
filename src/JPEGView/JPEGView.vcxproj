@@ -342,6 +342,7 @@
     <ClCompile Include="ReaderBMP.cpp" />
     <ClCompile Include="CommandPaletteDlg.cpp" />
     <ClCompile Include="ExportDlg.cpp" />
+    <ClCompile Include="OCRHelper.cpp" />
     <ClCompile Include="ReaderTGA.cpp" />
     <ClCompile Include="ResizeDlg.cpp" />
     <ClCompile Include="ResizeFilter.cpp" />
@@ -441,6 +442,7 @@
     <ClInclude Include="ReaderBMP.h" />
     <ClInclude Include="CommandPaletteDlg.h" />
     <ClInclude Include="ExportDlg.h" />
+    <ClInclude Include="OCRHelper.h" />
     <ClInclude Include="ReaderTGA.h" />
     <ClInclude Include="ResizeDlg.h" />
     <ClInclude Include="ResizeFilter.h" />

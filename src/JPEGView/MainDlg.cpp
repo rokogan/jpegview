@@ -34,6 +34,7 @@
 #include "SettingsDlg.h"
 #include "CommandPaletteDlg.h"
 #include "ExportDlg.h"
+#include "OCRHelper.h"
 #include "ResizeFilter.h"
 #include "EXIFReader.h"
 #include "EXIFHelpers.h"
@@ -2285,6 +2286,38 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 					m_sSaveExtension = dlgExport.GetExtension();   // default format for the Save-As below
 					m_bUseLosslessWEBP = dlgExport.IsLosslessWebP();
 					SaveImage(dlgExport.IsFullSize(), dlgExport.GetQuality());
+				}
+			}
+			break;
+		case IDM_OCR:
+			if (m_pCurrentImage != NULL) {
+				MouseOn();
+				CSize fullSize = m_pCurrentImage->OrigSize();
+				void* pDIB = m_pCurrentImage->GetDIB(fullSize, fullSize, CPoint(0, 0),
+					*m_pImageProcParams, CreateDefaultProcessingFlags());
+				std::wstring sText;
+				bool bOk = (pDIB != NULL) && OCRHelper::RecognizeToString(pDIB, fullSize.cx, fullSize.cy, sText);
+				if (!bOk) {
+					::MessageBox(m_hWnd, CNLS::GetString(_T("Text recognition is not available (no OCR language pack is installed).")),
+						_T("JPEGView"), MB_OK | MB_ICONINFORMATION);
+				} else if (sText.empty()) {
+					::MessageBox(m_hWnd, CNLS::GetString(_T("No text was found in the image.")),
+						_T("JPEGView"), MB_OK | MB_ICONINFORMATION);
+				} else if (::OpenClipboard(m_hWnd)) {
+					::EmptyClipboard();
+					size_t nBytes = (sText.size() + 1) * sizeof(wchar_t);
+					HGLOBAL hMem = ::GlobalAlloc(GMEM_MOVEABLE, nBytes);
+					if (hMem != NULL) {
+						void* pMem = ::GlobalLock(hMem);
+						if (pMem != NULL) {
+							memcpy(pMem, sText.c_str(), nBytes);
+							::GlobalUnlock(hMem);
+							if (::SetClipboardData(CF_UNICODETEXT, hMem) == NULL)
+								::GlobalFree(hMem);
+						} else
+							::GlobalFree(hMem);
+					}
+					::CloseClipboard();
 				}
 			}
 			break;
