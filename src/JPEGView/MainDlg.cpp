@@ -1819,7 +1819,7 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 			break;
 		case IDM_LANDSCAPE_MODE:
 			m_bLandscapeMode = !m_bLandscapeMode;
-			m_pNavPanelCtl->GetNavPanel()->GetBtnLandscapeMode()->SetActive(m_bLandscapeMode);
+			if (CButtonCtrl* p = m_pNavPanelCtl->GetNavPanel()->GetBtnLandscapeMode()) p->SetActive(m_bLandscapeMode);
 			if (m_bLandscapeMode) {
 				*m_pImageProcParams = _SetLandscapeModeParams(true, *m_pImageProcParams);
 				if (m_pCurrentImage != NULL) {
@@ -1841,7 +1841,7 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 			break;
 		case IDM_KEEP_PARAMETERS:
 			m_bKeepParams = !m_bKeepParams;
-			m_pNavPanelCtl->GetNavPanel()->GetBtnKeepParams()->SetActive(m_bKeepParams);
+			if (CButtonCtrl* p = m_pNavPanelCtl->GetNavPanel()->GetBtnKeepParams()) p->SetActive(m_bKeepParams);
 			if (m_bKeepParams) {
 				*m_pImageProcParamsKept = *m_pImageProcParams;
 				m_eProcessingFlagsKept = CreateProcessingFlags(m_bHQResampling, m_bAutoContrast, false, m_bLDC, m_bKeepParams, m_bLandscapeMode);
@@ -2007,7 +2007,7 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 			break;
 		case IDM_ZOOM_MODE:
 			m_bZoomModeOnLeftMouse = !m_bZoomModeOnLeftMouse;
-			m_pNavPanelCtl->GetNavPanel()->GetBtnZoomMode()->SetActive(m_bZoomModeOnLeftMouse);
+			if (CButtonCtrl* p = m_pNavPanelCtl->GetNavPanel()->GetBtnZoomMode()) p->SetActive(m_bZoomModeOnLeftMouse);
 			break;
 		case IDM_AUTO_ZOOM_FIT_NO_ZOOM:
 		case IDM_AUTO_ZOOM_FILL_NO_ZOOM:

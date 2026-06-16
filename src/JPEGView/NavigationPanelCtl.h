@@ -15,7 +15,9 @@ public:
 	// Current blending factor with background, 1 -> fully visible, 0 -> invisible
 	float CurrentBlendingFactor() { return m_fCurrentBlendingFactorNavPanel; }
 
-	virtual bool BlendPanel() { return !m_bMouseInNavPanel; }
+	// In minimalist mode the panel always uses the alpha-blend paint path so its rounded "pill"
+	// corners stay transparent (blend image-over-image) even while the mouse is over it.
+	virtual bool BlendPanel() { return m_bMinimalist || !m_bMouseInNavPanel; }
 	virtual float DimFactor() { return 0.0f; }
 
 	void AdjustMaximalWidth(int nMaxWidth);
@@ -43,6 +45,8 @@ public:
 
 private:
 	bool m_bEnabled;
+	bool m_bMinimalist;        // minimalist rounded-pill mode (NavPanelMinimalist setting)
+	float m_fMaxBlendFactor;   // fully-visible opacity ceiling (1.0 in minimalist mode, else BlendFactorNavPanel)
 	CNavigationPanel* m_pNavPanel;
 	bool m_bMouseInNavPanel;
 	int m_nMouseX, m_nMouseY;

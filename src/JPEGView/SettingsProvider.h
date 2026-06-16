@@ -37,6 +37,9 @@ public:
 	bool ShowHistogram() { return m_bShowHistogram; }
 	bool ShowJPEGComments() { return m_bShowJPEGComments; }
 	bool ShowNavPanel() { return m_bShowNavPanel; }
+	// If true, the navigation panel is drawn as a minimalist rounded "pill" with a reduced button set
+	// that fades to fully opaque; set to false to restore the classic translucent full button bar.
+	bool NavPanelMinimalist() { return m_bNavPanelMinimalist; }
 	bool ShowBottomPanel() { return m_bShowBottomPanel; }
 	bool ShowZoomNavigator() { return m_bShowZoomNavigator; }
 	bool ShowFullScreen() { return m_bShowFullScreen; }
@@ -219,6 +222,7 @@ private:
 	bool m_bShowHistogram;
 	bool m_bShowJPEGComments;
 	bool m_bShowNavPanel;
+	bool m_bNavPanelMinimalist;
 	bool m_bShowBottomPanel;
 	bool m_bShowZoomNavigator;
 	bool m_bShowFullScreen;

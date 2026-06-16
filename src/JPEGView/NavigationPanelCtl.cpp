@@ -28,32 +28,35 @@ static int GetDeleteCommandId() {
 
 CNavigationPanelCtl::CNavigationPanelCtl(CMainDlg* pMainDlg, CPanel* pImageProcPanel, bool* pFullScreenMode) : CPanelController(pMainDlg, false) {
 	m_bEnabled = CSettingsProvider::This().ShowNavPanel();
+	m_bMinimalist = CSettingsProvider::This().NavPanelMinimalist();
+	m_fMaxBlendFactor = m_bMinimalist ? 1.0f : CSettingsProvider::This().BlendFactorNavPanel();
 	m_nMouseX = m_nMouseY = 0;
 	m_bMouseInNavPanel = false;
 	m_bInNavPanelAnimation = false;
 	m_bFadeOut = false;
-	m_fCurrentBlendingFactorNavPanel = CSettingsProvider::This().BlendFactorNavPanel();
+	m_fCurrentBlendingFactorNavPanel = m_fMaxBlendFactor;
 	m_nBlendInNavPanelCountdown = 0;
 	m_pMemDCAnimation = NULL;
 	m_hOffScreenBitmapAnimation = NULL;
 	m_pPanel = m_pNavPanel = new CNavigationPanel(pMainDlg->m_hWnd, this, pImageProcPanel, pMainDlg->GetKeyMap(), pFullScreenMode, &(CMainDlg::IsCurrentImageFitToScreen), pMainDlg);
-	m_pNavPanel->GetBtnHome()->SetButtonPressedHandler(&OnGotoImage, this, CMainDlg::POS_First);
-	m_pNavPanel->GetBtnPrev()->SetButtonPressedHandler(&OnGotoImage, this, CMainDlg::POS_Previous);
-	m_pNavPanel->GetBtnNext()->SetButtonPressedHandler(&OnGotoImage, this, CMainDlg::POS_Next);
-	m_pNavPanel->GetBtnEnd()->SetButtonPressedHandler(&OnGotoImage, this, CMainDlg::POS_Last);
+	// Buttons may be absent in minimalist mode, so wire each handler only if its button exists.
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnHome()) p->SetButtonPressedHandler(&OnGotoImage, this, CMainDlg::POS_First);
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnPrev()) p->SetButtonPressedHandler(&OnGotoImage, this, CMainDlg::POS_Previous);
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnNext()) p->SetButtonPressedHandler(&OnGotoImage, this, CMainDlg::POS_Next);
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnEnd()) p->SetButtonPressedHandler(&OnGotoImage, this, CMainDlg::POS_Last);
 	if (CSettingsProvider::This().AllowFileDeletion()) {
-		m_pNavPanel->GetBtnDelete()->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, GetDeleteCommandId());
+		if (CButtonCtrl* p = m_pNavPanel->GetBtnDelete()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, GetDeleteCommandId());
 	}
-	m_pNavPanel->GetBtnZoomMode()->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_ZOOM_MODE, pMainDlg->IsInZoomMode());
-	m_pNavPanel->GetBtnFitToScreen()->SetButtonPressedHandler(&OnToggleZoomFit, this);
-	m_pNavPanel->GetBtnWindowMode()->SetButtonPressedHandler(&OnToggleWindowMode, this);
-	m_pNavPanel->GetBtnRotateCW()->SetButtonPressedHandler(&OnRotate, this, IDM_ROTATE_90);
-	m_pNavPanel->GetBtnRotateCCW()->SetButtonPressedHandler(&OnRotate, this, IDM_ROTATE_270);
-	m_pNavPanel->GetBtnRotateFree()->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_ROTATE);
-	m_pNavPanel->GetBtnPerspectiveCorrection()->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_PERSPECTIVE);
-	m_pNavPanel->GetBtnKeepParams()->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_KEEP_PARAMETERS, pMainDlg->IsKeepParams());
-	m_pNavPanel->GetBtnLandscapeMode()->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_LANDSCAPE_MODE, pMainDlg->IsLandscapeMode());
-	m_pNavPanel->GetBtnShowInfo()->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_SHOW_FILEINFO, pMainDlg->GetEXIFDisplayCtl()->IsActive());
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnZoomMode()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_ZOOM_MODE, pMainDlg->IsInZoomMode());
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnFitToScreen()) p->SetButtonPressedHandler(&OnToggleZoomFit, this);
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnWindowMode()) p->SetButtonPressedHandler(&OnToggleWindowMode, this);
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnRotateCW()) p->SetButtonPressedHandler(&OnRotate, this, IDM_ROTATE_90);
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnRotateCCW()) p->SetButtonPressedHandler(&OnRotate, this, IDM_ROTATE_270);
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnRotateFree()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_ROTATE);
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnPerspectiveCorrection()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_PERSPECTIVE);
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnKeepParams()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_KEEP_PARAMETERS, pMainDlg->IsKeepParams());
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnLandscapeMode()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_LANDSCAPE_MODE, pMainDlg->IsLandscapeMode());
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnShowInfo()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_SHOW_FILEINFO, pMainDlg->GetEXIFDisplayCtl()->IsActive());
 }
 
 CNavigationPanelCtl::~CNavigationPanelCtl() {
@@ -204,7 +207,7 @@ void CNavigationPanelCtl::StartNavPanelAnimation(bool bFadeOut, bool bFast) {
 			return; // already visible, do nothing
 		}
 		m_bInNavPanelAnimation = true;
-		m_fCurrentBlendingFactorNavPanel = CSettingsProvider::This().BlendFactorNavPanel();
+		m_fCurrentBlendingFactorNavPanel = m_fMaxBlendFactor;
 		::SetTimer(m_pMainDlg->GetHWND(), NAVPANEL_ANI_TIMER_EVENT_ID, bFast ? 20 : 100, NULL);
 	} else if (m_bFadeOut != bFadeOut) {
 		m_bFadeOut = bFadeOut;
@@ -221,7 +224,7 @@ void CNavigationPanelCtl::DoNavPanelAnimation() {
 	} else {
 		if (!IsVisible()) {
 			bDoAnimation = false;
-		} else if ((m_bFadeOut && m_fCurrentBlendingFactorNavPanel <= 0) || (!m_bFadeOut && m_fCurrentBlendingFactorNavPanel >= CSettingsProvider::This().BlendFactorNavPanel())) {
+		} else if ((m_bFadeOut && m_fCurrentBlendingFactorNavPanel <= 0) || (!m_bFadeOut && m_fCurrentBlendingFactorNavPanel >= m_fMaxBlendFactor)) {
 			bDoAnimation = false;
 		}
 	}
@@ -230,8 +233,8 @@ void CNavigationPanelCtl::DoNavPanelAnimation() {
 	if (m_bFadeOut) {
 		m_fCurrentBlendingFactorNavPanel = max(0.0f, m_fCurrentBlendingFactorNavPanel - 0.02f);
 	} else {
-		m_fCurrentBlendingFactorNavPanel = min(CSettingsProvider::This().BlendFactorNavPanel(), m_fCurrentBlendingFactorNavPanel + 0.06f);
-		bTerminate = m_fCurrentBlendingFactorNavPanel >= CSettingsProvider::This().BlendFactorNavPanel();
+		m_fCurrentBlendingFactorNavPanel = min(m_fMaxBlendFactor, m_fCurrentBlendingFactorNavPanel + 0.06f);
+		bTerminate = m_fCurrentBlendingFactorNavPanel >= m_fMaxBlendFactor;
 	}
 
 	if (bDoAnimation) {
@@ -272,7 +275,7 @@ void CNavigationPanelCtl::EndNavPanelAnimation() {
 	if (m_bInNavPanelAnimation) {
 		::KillTimer(m_pMainDlg->GetHWND(), NAVPANEL_ANI_TIMER_EVENT_ID);
 		m_bInNavPanelAnimation = false;
-		m_fCurrentBlendingFactorNavPanel = CSettingsProvider::This().BlendFactorNavPanel();
+		m_fCurrentBlendingFactorNavPanel = m_fMaxBlendFactor;
 		if (m_pMemDCAnimation != NULL) {
 			delete m_pMemDCAnimation;
 			m_pMemDCAnimation = NULL;
@@ -298,7 +301,7 @@ void CNavigationPanelCtl::HideNavPanelTemporary(bool bForce) {
 void CNavigationPanelCtl::ShowNavPanelTemporary() {
 	if (!m_pMainDlg->GetImageProcPanelCtl()->IsVisible()) {
 		m_bInNavPanelAnimation = false;
-		m_fCurrentBlendingFactorNavPanel = CSettingsProvider::This().BlendFactorNavPanel();
+		m_fCurrentBlendingFactorNavPanel = m_fMaxBlendFactor;
 		m_pMainDlg->InvalidateRect(PanelRect(), FALSE);
 		m_bFadeOut = true;
 		::KillTimer(m_pMainDlg->GetHWND(), NAVPANEL_ANI_TIMER_EVENT_ID);

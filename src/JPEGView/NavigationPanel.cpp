@@ -27,30 +27,41 @@ CNavigationPanel::CNavigationPanel(HWND hWnd, INotifiyMouseCapture* pNotifyMouse
 	m_keyMap = keyMap;
 	m_pFullScreenMode = pFullScreenMode;
 
-	AddUserPaintButton(ID_btnHome, GetTooltip(keyMap, _T("Show first image in folder"), IDM_FIRST), &PaintHomeBtn);
-	AddUserPaintButton(ID_btnPrev, GetTooltip(keyMap, _T("Show previous image"), IDM_PREV), &PaintPrevBtn);
-	AddGap(ID_gap1, 4);
-	AddUserPaintButton(ID_btnNext, GetTooltip(keyMap, _T("Show next image"), IDM_NEXT), &PaintNextBtn);
-	AddUserPaintButton(ID_btnEnd, GetTooltip(keyMap, _T("Show last image in folder"), IDM_LAST), &PaintEndBtn);
-	AddGap(ID_gap2, 8);
-	if (CSettingsProvider::This().AllowFileDeletion()) {
-		AddUserPaintButton(ID_btnDelete, GetTooltip(keyMap, _T("Delete image file"),
-			keyMap->GetKeyStringForCommand(IDM_MOVE_TO_RECYCLE_BIN).IsEmpty() ? IDM_MOVE_TO_RECYCLE_BIN_CONFIRM : IDM_MOVE_TO_RECYCLE_BIN), &PaintDeleteBtn); 
-		AddGap(ID_gap3, 8);
+	if (CSettingsProvider::This().NavPanelMinimalist()) {
+		// Minimalist "pill": only the essentials. Every other command stays reachable via the
+		// keyboard, the context menu and the command palette.
+		AddUserPaintButton(ID_btnPrev, GetTooltip(keyMap, _T("Show previous image"), IDM_PREV), &PaintPrevBtn);
+		AddUserPaintButton(ID_btnNext, GetTooltip(keyMap, _T("Show next image"), IDM_NEXT), &PaintNextBtn);
+		AddGap(ID_gap2, 10);
+		AddUserPaintButton(ID_btnFitToScreen, &ZoomFitToggleTooltip, &PaintZoomFitToggleBtn, NULL, this);
+		AddGap(ID_gap6, 10);
+		AddUserPaintButton(ID_btnShowInfo, GetTooltip(keyMap, _T("Display image (EXIF) information"), IDM_SHOW_FILEINFO), &PaintInfoBtn);
+	} else {
+		AddUserPaintButton(ID_btnHome, GetTooltip(keyMap, _T("Show first image in folder"), IDM_FIRST), &PaintHomeBtn);
+		AddUserPaintButton(ID_btnPrev, GetTooltip(keyMap, _T("Show previous image"), IDM_PREV), &PaintPrevBtn);
+		AddGap(ID_gap1, 4);
+		AddUserPaintButton(ID_btnNext, GetTooltip(keyMap, _T("Show next image"), IDM_NEXT), &PaintNextBtn);
+		AddUserPaintButton(ID_btnEnd, GetTooltip(keyMap, _T("Show last image in folder"), IDM_LAST), &PaintEndBtn);
+		AddGap(ID_gap2, 8);
+		if (CSettingsProvider::This().AllowFileDeletion()) {
+			AddUserPaintButton(ID_btnDelete, GetTooltip(keyMap, _T("Delete image file"),
+				keyMap->GetKeyStringForCommand(IDM_MOVE_TO_RECYCLE_BIN).IsEmpty() ? IDM_MOVE_TO_RECYCLE_BIN_CONFIRM : IDM_MOVE_TO_RECYCLE_BIN), &PaintDeleteBtn);
+			AddGap(ID_gap3, 8);
+		}
+		AddUserPaintButton(ID_btnZoomMode, GetTooltip(keyMap, _T("Zoom mode (drag mouse to zoom)"), IDM_ZOOM_MODE), &PaintZoomModeBtn);
+		AddUserPaintButton(ID_btnFitToScreen, &ZoomFitToggleTooltip, &PaintZoomFitToggleBtn, NULL, this);
+		AddUserPaintButton(ID_btnWindowMode, &WindowModeTooltip, &PaintWindowModeBtn, NULL, this);
+		AddGap(ID_gap4, 8);
+		AddUserPaintButton(ID_btnRotateCW, GetTooltip(keyMap, _T("Rotate image 90 deg clockwise"), IDM_ROTATE_90), &PaintRotateCWBtn);
+		AddUserPaintButton(ID_btnRotateCCW, GetTooltip(keyMap, _T("Rotate image 90 deg counter-clockwise"), IDM_ROTATE_270), &PaintRotateCCWBtn);
+		AddUserPaintButton(ID_btnRotateFree, GetTooltip(keyMap, _T("Rotate image by user-defined angle"), IDM_ROTATE), &PaintFreeRotBtn);
+		AddUserPaintButton(ID_btnPerspectiveCorrection, GetTooltip(keyMap, _T("Correct converging lines (perspective correction)"), IDM_PERSPECTIVE), &PaintPerspectiveBtn);
+		AddGap(ID_gap5, 8);
+		AddUserPaintButton(ID_btnKeepParams, GetTooltip(keyMap, _T("Keep processing parameters between images"), IDM_KEEP_PARAMETERS), &PaintKeepParamsBtn);
+		AddUserPaintButton(ID_btnLandscapeMode, GetTooltip(keyMap, _T("Landscape picture enhancement mode"), IDM_LANDSCAPE_MODE), &PaintLandscapeModeBtn);
+		AddGap(ID_gap6, 16);
+		AddUserPaintButton(ID_btnShowInfo, GetTooltip(keyMap, _T("Display image (EXIF) information"), IDM_SHOW_FILEINFO), &PaintInfoBtn);
 	}
-	AddUserPaintButton(ID_btnZoomMode, GetTooltip(keyMap, _T("Zoom mode (drag mouse to zoom)"), IDM_ZOOM_MODE), &PaintZoomModeBtn);
-	AddUserPaintButton(ID_btnFitToScreen, &ZoomFitToggleTooltip, &PaintZoomFitToggleBtn, NULL, this);
-	AddUserPaintButton(ID_btnWindowMode, &WindowModeTooltip, &PaintWindowModeBtn, NULL, this);
-	AddGap(ID_gap4, 8);
-	AddUserPaintButton(ID_btnRotateCW, GetTooltip(keyMap, _T("Rotate image 90 deg clockwise"), IDM_ROTATE_90), &PaintRotateCWBtn);
-	AddUserPaintButton(ID_btnRotateCCW, GetTooltip(keyMap, _T("Rotate image 90 deg counter-clockwise"), IDM_ROTATE_270), &PaintRotateCCWBtn);
-	AddUserPaintButton(ID_btnRotateFree, GetTooltip(keyMap, _T("Rotate image by user-defined angle"), IDM_ROTATE), &PaintFreeRotBtn);
-	AddUserPaintButton(ID_btnPerspectiveCorrection, GetTooltip(keyMap, _T("Correct converging lines (perspective correction)"), IDM_PERSPECTIVE), &PaintPerspectiveBtn);
-	AddGap(ID_gap5, 8);
-	AddUserPaintButton(ID_btnKeepParams, GetTooltip(keyMap, _T("Keep processing parameters between images"), IDM_KEEP_PARAMETERS), &PaintKeepParamsBtn);
-	AddUserPaintButton(ID_btnLandscapeMode, GetTooltip(keyMap, _T("Landscape picture enhancement mode"), IDM_LANDSCAPE_MODE), &PaintLandscapeModeBtn);
-	AddGap(ID_gap6, 16);
-	AddUserPaintButton(ID_btnShowInfo, GetTooltip(keyMap, _T("Display image (EXIF) information"), IDM_SHOW_FILEINFO), &PaintInfoBtn);
 
 	m_nOptimalWidth = PanelRect().Width();
 }
@@ -95,6 +106,27 @@ CRect CNavigationPanel::PanelRect() {
 		((sliderRect.Width() < HelpersGUI::ScaleToScreen(800) || !CSettingsProvider::This().ShowBottomPanel()) ? (sliderRect.bottom - HelpersGUI::ScaleToScreen(26)) : sliderRect.top) - m_nHeight),
 		CSize(m_nWidth, m_nHeight));
 	return m_clientRect;
+}
+
+void CNavigationPanel::OnPaint(CDC & dc, const CPoint& offset) {
+	if (CSettingsProvider::This().NavPanelMinimalist()) {
+		// Draw a rounded "pill" body behind the icons. Because the surrounding paint path blends this
+		// panel tile over a copy of the image, the corners outside the RoundRect stay equal to the
+		// image and therefore blend to nothing - the rounded shape comes for free, no clip region.
+		CRect r = PanelRect();
+		r.OffsetRect(offset);
+		int nRadius = r.Height(); // ellipse == height -> fully rounded (semicircular) ends
+		HBRUSH hBrush = ::CreateSolidBrush(RGB(28, 28, 30));
+		HPEN hPen = ::CreatePen(PS_SOLID, 1, RGB(70, 70, 74));
+		HBRUSH hOldBrush = dc.SelectBrush(hBrush);
+		HPEN hOldPen = dc.SelectPen(hPen);
+		dc.RoundRect(r.left, r.top, r.right, r.bottom, nRadius, nRadius);
+		dc.SelectBrush(hOldBrush);
+		dc.SelectPen(hOldPen);
+		::DeleteObject(hBrush);
+		::DeleteObject(hPen);
+	}
+	CPanel::OnPaint(dc, offset);
 }
 
 bool CNavigationPanel::AdjustMaximalWidth(int nMaxWidth) {

@@ -53,6 +53,7 @@ public:
 	CButtonCtrl* GetBtnShowInfo() { return GetControl<CButtonCtrl*>(ID_btnShowInfo); }
 
 	virtual CRect PanelRect();
+	virtual void OnPaint(CDC & dc, const CPoint& offset);
 	virtual void RequestRepositioning();
 
 	bool AdjustMaximalWidth(int nMaxWidth); // return if the width has been adjusted
