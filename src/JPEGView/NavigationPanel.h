@@ -28,8 +28,11 @@ public:
 		ID_gap5,
 		ID_btnKeepParams,
 		ID_btnLandscapeMode,
+		ID_btnQuickAdjust,
 		ID_gap6,
-		ID_btnShowInfo
+		ID_btnShowInfo,
+		ID_gap7,
+		ID_btnFullScreen
 	};
 public:
 	// The panel is on the given window above the image processing panel
@@ -51,6 +54,8 @@ public:
 	CButtonCtrl* GetBtnKeepParams() { return GetControl<CButtonCtrl*>(ID_btnKeepParams); }
 	CButtonCtrl* GetBtnLandscapeMode() { return GetControl<CButtonCtrl*>(ID_btnLandscapeMode); }
 	CButtonCtrl* GetBtnShowInfo() { return GetControl<CButtonCtrl*>(ID_btnShowInfo); }
+	CButtonCtrl* GetBtnQuickAdjust() { return GetControl<CButtonCtrl*>(ID_btnQuickAdjust); }
+	CButtonCtrl* GetBtnFullScreen() { return GetControl<CButtonCtrl*>(ID_btnFullScreen); }
 
 	virtual CRect PanelRect();
 	virtual void OnPaint(CDC & dc, const CPoint& offset);
@@ -78,6 +83,8 @@ private:
 	static void PaintFreeRotBtn(void* pContext, const CRect& rect, CDC& dc);
 	static void PaintPerspectiveBtn(void* pContext, const CRect& rect, CDC& dc);
 	static void PaintInfoBtn(void* pContext, const CRect& rect, CDC& dc);
+	static void PaintQuickAdjustBtn(void* pContext, const CRect& rect, CDC& dc);
+	static void PaintFullScreenBtn(void* pContext, const CRect& rect, CDC& dc);
 	static void PaintKeepParamsBtn(void* pContext, const CRect& rect, CDC& dc);
 	static void PaintLandscapeModeBtn(void* pContext, const CRect& rect, CDC& dc);
 

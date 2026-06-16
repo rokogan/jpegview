@@ -18,6 +18,7 @@ class CPanelMgr;
 class CEXIFDisplayCtl;
 class CImageProcPanelCtl;
 class CNavigationPanelCtl;
+class CQuickAdjustPanelCtl;
 class CRotationPanelCtl;
 class CTiltCorrectionPanelCtl;
 class CUnsharpMaskPanelCtl;
@@ -174,6 +175,7 @@ public:
 	LPCTSTR CurrentFileName(bool bFileTitle);
 	CFileList* GetFileList() { return m_pFileList; }
 	CNavigationPanelCtl* GetNavPanelCtl() { return m_pNavPanelCtl; }
+	CQuickAdjustPanelCtl* GetQuickAdjustPanelCtl() { return m_pQuickAdjustPanelCtl; }
 	CEXIFDisplayCtl* GetEXIFDisplayCtl() { return m_pEXIFDisplayCtl; }
 	CUnsharpMaskPanelCtl* GetUnsharpMaskPanelCtl() { return m_pUnsharpMaskPanelCtl; }
 	CImageProcPanelCtl* GetImageProcPanelCtl() { return m_pImageProcPanelCtl; }
@@ -334,6 +336,7 @@ private:
 	CZoomNavigatorCtl* m_pZoomNavigatorCtl;
 	CImageProcPanelCtl* m_pImageProcPanelCtl;
 	CNavigationPanelCtl* m_pNavPanelCtl;
+	CQuickAdjustPanelCtl* m_pQuickAdjustPanelCtl;
 	CEXIFDisplayCtl* m_pEXIFDisplayCtl;
 	CWndButtonPanelCtl* m_pWndButtonPanelCtl;
 	CInfoButtonPanelCtl* m_pInfoButtonPanelCtl;

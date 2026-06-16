@@ -18,6 +18,7 @@ static const PaletteCommand kPaletteCommands[] = {
 	{ IDM_SAVE_SCREEN,             _T("Save image as displayed...") },
 	{ IDM_EXPORT,                  _T("Export (choose format and quality)...") },
 	{ IDM_OCR,                     _T("Copy text from image (OCR)") },
+	{ IDM_QUICK_ADJUST,            _T("Quick adjust (brightness/contrast/saturation)") },
 	{ IDM_RELOAD,                  _T("Reload image") },
 	{ IDM_EXPLORE,                 _T("Open containing folder in Explorer") },
 	{ IDM_PRINT,                   _T("Print image...") },

@@ -28,14 +28,17 @@ CNavigationPanel::CNavigationPanel(HWND hWnd, INotifiyMouseCapture* pNotifyMouse
 	m_pFullScreenMode = pFullScreenMode;
 
 	if (CSettingsProvider::This().NavPanelMinimalist()) {
-		// Minimalist "pill": only the essentials. Every other command stays reachable via the
-		// keyboard, the context menu and the command palette.
+		// Minimalist "pill": the essentials only (prev / next / fit / rotate / quick-adjust / info /
+		// fullscreen). Every other command stays reachable via the keyboard, context menu and palette.
 		AddUserPaintButton(ID_btnPrev, GetTooltip(keyMap, _T("Show previous image"), IDM_PREV), &PaintPrevBtn);
 		AddUserPaintButton(ID_btnNext, GetTooltip(keyMap, _T("Show next image"), IDM_NEXT), &PaintNextBtn);
 		AddGap(ID_gap2, 10);
 		AddUserPaintButton(ID_btnFitToScreen, &ZoomFitToggleTooltip, &PaintZoomFitToggleBtn, NULL, this);
-		AddGap(ID_gap6, 10);
+		AddUserPaintButton(ID_btnRotateCW, GetTooltip(keyMap, _T("Rotate image 90 deg clockwise"), IDM_ROTATE_90), &PaintRotateCWBtn);
+		AddUserPaintButton(ID_btnQuickAdjust, GetTooltip(keyMap, _T("Quick adjust (brightness/contrast/saturation)"), IDM_QUICK_ADJUST), &PaintQuickAdjustBtn);
 		AddUserPaintButton(ID_btnShowInfo, GetTooltip(keyMap, _T("Display image (EXIF) information"), IDM_SHOW_FILEINFO), &PaintInfoBtn);
+		AddGap(ID_gap7, 10);
+		AddUserPaintButton(ID_btnFullScreen, &WindowModeTooltip, &PaintFullScreenBtn, NULL, this);
 	} else {
 		AddUserPaintButton(ID_btnHome, GetTooltip(keyMap, _T("Show first image in folder"), IDM_FIRST), &PaintHomeBtn);
 		AddUserPaintButton(ID_btnPrev, GetTooltip(keyMap, _T("Show previous image"), IDM_PREV), &PaintPrevBtn);
@@ -421,6 +424,35 @@ void CNavigationPanel::PaintInfoBtn(void* pContext, const CRect& rect, CDC& dc) 
 	HFONT oldFont = dc.SelectFont(font);
 	dc.DrawText(_T("i"), 1, (LPRECT)&rect, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOCLIP);
 	dc.SelectFont(oldFont);
+}
+
+void CNavigationPanel::PaintQuickAdjustBtn(void* pContext, const CRect& rect, CDC& dc) {
+	// Three horizontal sliders with knobs at varying positions.
+	CRect r = Helpers::InflateRect(rect, 0.28f);
+	int nKnob = max(1, r.Width() / 8);
+	int nRows = 3;
+	for (int i = 0; i < nRows; i++) {
+		int nY = r.top + (int)((i + 0.5f) * r.Height() / nRows);
+		dc.MoveTo(r.left, nY);
+		dc.LineTo(r.right, nY);
+		int nKx = r.left + (int)((i == 1 ? 0.65f : 0.35f) * r.Width());
+		dc.SelectStockBrush(HOLLOW_BRUSH);
+		dc.Ellipse(nKx - nKnob, nY - nKnob, nKx + nKnob, nY + nKnob);
+	}
+}
+
+void CNavigationPanel::PaintFullScreenBtn(void* pContext, const CRect& rect, CDC& dc) {
+	// Four corner brackets (expand to full screen).
+	CRect r = Helpers::InflateRect(rect, 0.28f);
+	int nL = max(2, r.Width() / 3);
+	// top-left
+	dc.MoveTo(r.left, r.top + nL); dc.LineTo(r.left, r.top); dc.LineTo(r.left + nL, r.top);
+	// top-right
+	dc.MoveTo(r.right - nL, r.top); dc.LineTo(r.right, r.top); dc.LineTo(r.right, r.top + nL);
+	// bottom-right
+	dc.MoveTo(r.right, r.bottom - nL); dc.LineTo(r.right, r.bottom); dc.LineTo(r.right - nL, r.bottom);
+	// bottom-left
+	dc.MoveTo(r.left + nL, r.bottom); dc.LineTo(r.left, r.bottom); dc.LineTo(r.left, r.bottom - nL);
 }
 
 static CString staticTooltip;

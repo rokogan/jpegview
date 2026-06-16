@@ -52,6 +52,7 @@
 #include "EXIFDisplayCtl.h"
 #include "NavigationPanelCtl.h"
 #include "NavigationPanel.h"
+#include "QuickAdjustPanelCtl.h"
 #include "KeyMap.h"
 #include "JPEGLosslessTransform.h"
 #include "DirectoryWatcher.h"
@@ -300,6 +301,7 @@ CMainDlg::CMainDlg(bool bForceFullScreen) {
 	m_pUnsharpMaskPanelCtl = NULL;
 	m_pImageProcPanelCtl = NULL;
 	m_pNavPanelCtl = NULL;
+	m_pQuickAdjustPanelCtl = NULL;
 	m_pCropCtl = new CCropCtl(this);
 	m_pKeyMap = new CKeyMap(); // routine to load the keymap, it's not as simple as just loading one file anymore, but all logic handled by CKeyMap
 	m_pPrintImage = new CPrintImage(CSettingsProvider::This().PrintMargin(), CSettingsProvider::This().DefaultPrintWidth());
@@ -385,6 +387,10 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 	// Create perspective correction panel
 	m_pTiltCorrectionPanelCtl = new CTiltCorrectionPanelCtl(this, m_pImageProcPanelCtl->GetPanel());
 	m_pPanelMgr->AddPanelController(m_pTiltCorrectionPanelCtl);
+
+	// Create the minimalist "Quick adjust" card (toggled from the navigation pill)
+	m_pQuickAdjustPanelCtl = new CQuickAdjustPanelCtl(this, m_pImageProcParams);
+	m_pPanelMgr->AddPanelController(m_pQuickAdjustPanelCtl);
 
 	// Create navigation panel
 	m_pNavPanelCtl = new CNavigationPanelCtl(this, m_pImageProcPanelCtl->GetPanel(), &m_bFullScreenMode);
@@ -2319,6 +2325,14 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 					}
 					::CloseClipboard();
 				}
+			}
+			break;
+		case IDM_QUICK_ADJUST:
+			if (m_pQuickAdjustPanelCtl != NULL) {
+				MouseOn();
+				m_pQuickAdjustPanelCtl->SetVisible(!m_pQuickAdjustPanelCtl->IsShown());
+				if (CButtonCtrl* p = m_pNavPanelCtl->GetNavPanel()->GetBtnQuickAdjust())
+					p->SetActive(m_pQuickAdjustPanelCtl->IsShown());
 			}
 			break;
 	}

@@ -380,6 +380,8 @@
     <ClCompile Include="HelpDisplayCtl.cpp" />
     <ClCompile Include="ImageProcPanelCtl.cpp" />
     <ClCompile Include="NavigationPanelCtl.cpp" />
+    <ClCompile Include="QuickAdjustPanel.cpp" />
+    <ClCompile Include="QuickAdjustPanelCtl.cpp" />
     <ClCompile Include="PanelController.cpp" />
     <ClCompile Include="PanelMgr.cpp" />
     <ClCompile Include="RotationPanelCtl.cpp" />
@@ -475,6 +477,8 @@
     <ClInclude Include="HelpDisplayCtl.h" />
     <ClInclude Include="ImageProcPanelCtl.h" />
     <ClInclude Include="NavigationPanelCtl.h" />
+    <ClInclude Include="QuickAdjustPanel.h" />
+    <ClInclude Include="QuickAdjustPanelCtl.h" />
     <ClInclude Include="PanelController.h" />
     <ClInclude Include="PanelMgr.h" />
     <ClInclude Include="RotationPanelCtl.h" />

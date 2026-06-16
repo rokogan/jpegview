@@ -57,6 +57,8 @@ CNavigationPanelCtl::CNavigationPanelCtl(CMainDlg* pMainDlg, CPanel* pImageProcP
 	if (CButtonCtrl* p = m_pNavPanel->GetBtnKeepParams()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_KEEP_PARAMETERS, pMainDlg->IsKeepParams());
 	if (CButtonCtrl* p = m_pNavPanel->GetBtnLandscapeMode()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_LANDSCAPE_MODE, pMainDlg->IsLandscapeMode());
 	if (CButtonCtrl* p = m_pNavPanel->GetBtnShowInfo()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_SHOW_FILEINFO, pMainDlg->GetEXIFDisplayCtl()->IsActive());
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnQuickAdjust()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_QUICK_ADJUST);
+	if (CButtonCtrl* p = m_pNavPanel->GetBtnFullScreen()) p->SetButtonPressedHandler(&CMainDlg::OnExecuteCommand, pMainDlg, IDM_FULL_SCREEN_MODE);
 }
 
 CNavigationPanelCtl::~CNavigationPanelCtl() {

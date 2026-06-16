@@ -224,6 +224,7 @@
 #define IDM_COMMAND_PALETTE 9130		// :KeyMap: open the command palette (searchable list of all commands)
 #define IDM_EXPORT          9135		// :KeyMap: export a copy of the image (choose format and quality)
 #define IDM_OCR             9136		// :KeyMap: recognize text in the image (OCR) and copy it to the clipboard
+#define IDM_QUICK_ADJUST    9137		// :KeyMap: toggle the Quick adjust card (histogram + brightness/contrast/saturation)
 #define IDM_PERSPECTIVE     9150		// :KeyMap: show perpective correction dialog
 #define IDM_MIRROR_H        9200		// :KeyMap: mirror image horizontally
 #define IDM_MIRROR_V        9300		// :KeyMap: mirror image vertically
