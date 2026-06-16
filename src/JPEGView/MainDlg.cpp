@@ -1312,6 +1312,9 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 		if (m_pCurrentImage->GetEXIFReader() == NULL || !m_pCurrentImage->GetEXIFReader()->GetAcquisitionTimePresent()) {
 			::EnableMenuItem(hMenuModDate, IDM_TOUCH_IMAGE_EXIF, MF_BYCOMMAND | MF_GRAYED);
 		}
+		if (m_pCurrentImage->GetEXIFReader() == NULL || !m_pCurrentImage->GetEXIFReader()->IsGPSInformationPresent()) {
+			::EnableMenuItem(hMenuTrackPopup, IDM_SHOW_ON_MAP, MF_BYCOMMAND | MF_GRAYED);
+		}
 		int windowsVersion = Helpers::GetWindowsVersion();
 		if (m_pCurrentImage->IsClipboardImage() || (windowsVersion < 600 && m_pCurrentImage->GetImageFormat() != IF_WindowsBMP) || 
 			(windowsVersion < 602 && !(m_pCurrentImage->GetImageFormat() == IF_WindowsBMP || m_pCurrentImage->GetImageFormat() == IF_JPEG)) ||
@@ -2183,6 +2186,23 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 		case IDM_SET_WALLPAPER_DISPLAY:
 			if (m_pCurrentImage != NULL) {
 				SetDesktopWallpaper::SetProcessedImageAsWallpaper(*m_pCurrentImage);
+			}
+			break;
+		case IDM_SHOW_ON_MAP:
+			if (m_pCurrentImage != NULL && m_pCurrentImage->GetEXIFReader() != NULL &&
+				m_pCurrentImage->GetEXIFReader()->IsGPSInformationPresent()) {
+				CEXIFReader* pEXIF = m_pCurrentImage->GetEXIFReader();
+				GPSCoordinate* pLat = pEXIF->GetGPSLatitude();
+				GPSCoordinate* pLon = pEXIF->GetGPSLongitude();
+				double dLat = pLat->Degrees + pLat->Minutes / 60.0 + pLat->Seconds / 3600.0;
+				double dLon = pLon->Degrees + pLon->Minutes / 60.0 + pLon->Seconds / 3600.0;
+				LPCTSTR sLatRef = pLat->GetReference();
+				LPCTSTR sLonRef = pLon->GetReference();
+				if (sLatRef != NULL && (sLatRef[0] == _T('S') || sLatRef[0] == _T('s'))) dLat = -dLat;
+				if (sLonRef != NULL && (sLonRef[0] == _T('W') || sLonRef[0] == _T('w'))) dLon = -dLon;
+				CString sURL;
+				sURL.Format(_T("https://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f#map=15/%.6f/%.6f"), dLat, dLon, dLat, dLon);
+				::ShellExecute(this->m_hWnd, _T("open"), sURL, NULL, NULL, SW_SHOWNORMAL);
 			}
 			break;
 	}
