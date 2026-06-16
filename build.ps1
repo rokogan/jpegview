@@ -41,8 +41,13 @@ $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.e
 if (-not (Test-Path $vswhere)) {
     throw "vswhere not found. Install Visual Studio 2022 or Build Tools 2022 with the C++ workload."
 }
-$vsPath = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath | Select-Object -First 1
-if (-not $vsPath) { throw "No Visual Studio install with MSBuild was found." }
+# Constrain to VS 2022 (17.x) with the C++ toolset installed: the projects build with the v143
+# toolset, which newer side-by-side installs (e.g. VS "18") don't provide, so plain -latest can
+# pick a VS that lacks v143 and the build fails.
+$vsPath = & $vswhere -version '[17.0,18.0)' -products * `
+    -requires Microsoft.Component.MSBuild Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+    -property installationPath | Select-Object -First 1
+if (-not $vsPath) { throw "No Visual Studio 2022 install with the C++ (v143) toolset was found. Install Visual Studio 2022 or Build Tools 2022 with 'Desktop development with C++'." }
 
 Import-Module (Join-Path $vsPath 'Common7\Tools\Microsoft.VisualStudio.DevShell.dll')
 Enter-VsDevShell -VsInstallPath $vsPath -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64' | Out-Null
