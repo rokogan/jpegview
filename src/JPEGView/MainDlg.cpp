@@ -205,6 +205,8 @@ CMainDlg::CMainDlg(bool bForceFullScreen) {
 	m_dZoomKept = -1;
 	m_offsetKept = CPoint(0, 0);
 	m_bCurrentImageInParamDB = false;
+	m_bShowOriginal = false;
+	m_nShowOriginalVK = 0;
 	m_bCurrentImageIsSpecialProcessing = false;
 	m_dCurrentInitialLightenShadows = -1;
 
@@ -541,9 +543,14 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 		} else if (m_pTiltCorrectionPanelCtl->IsVisible()) {
 			pDIBData = m_pTiltCorrectionPanelCtl->GetDIBForPreview(newSize, clippedSize, offsetsInImage, 
 				*m_pImageProcParams, CreateProcessingFlags(false, m_bAutoContrast, m_bAutoContrastSection, m_bLDC, false, m_bLandscapeMode));
+		} else if (m_bShowOriginal) {
+			// Hold-to-compare: render the original, unprocessed image (identity params, no corrections).
+			pDIBData = m_pCurrentImage->GetDIB(newSize, clippedSize, offsetsInImage,
+				GetNoProcessingParams(),
+				CreateProcessingFlags(m_bHQResampling && !m_bTemporaryLowQ && !m_bZoomMode, false, false, false, false, false));
 		} else {
-			pDIBData = m_pCurrentImage->GetDIB(newSize, clippedSize, offsetsInImage, 
-				*m_pImageProcParams, 
+			pDIBData = m_pCurrentImage->GetDIB(newSize, clippedSize, offsetsInImage,
+				*m_pImageProcParams,
 				CreateProcessingFlags(m_bHQResampling && !m_bTemporaryLowQ && !m_bZoomMode, m_bAutoContrast, m_bAutoContrastSection, m_bLDC, false, m_bLandscapeMode));
 		}
 
@@ -1056,7 +1063,16 @@ LRESULT CMainDlg::OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOO
 		ExecuteCommand(IDM_HELP);
 	} else {
 		int nCommand = m_pKeyMap->GetCommandIdForKey((int)wParam, bAlt, bCtrl, bShift);
-		if (nCommand > 0) {
+		if (nCommand == IDM_SHOW_ORIGINAL) {
+			// Hold-to-compare: show the original while the key is held. Auto-repeat re-fires
+			// WM_KEYDOWN, so only act (and repaint) on the down edge.
+			bHandled = true;
+			if (!m_bShowOriginal) {
+				m_bShowOriginal = true;
+				m_nShowOriginalVK = (int)wParam;
+				Invalidate(FALSE);
+			}
+		} else if (nCommand > 0) {
 			bHandled = true;
 			ExecuteCommand(nCommand);
 		}
@@ -1070,6 +1086,16 @@ LRESULT CMainDlg::OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOO
 	}
 
 	return 1;
+}
+
+LRESULT CMainDlg::OnKeyUp(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/) {
+	// Releasing the hold-to-compare key returns to the processed image. Match the exact virtual key
+	// that activated it (independent of modifier state at release) so it can never get stuck on.
+	if (m_bShowOriginal && (int)wParam == m_nShowOriginalVK) {
+		m_bShowOriginal = false;
+		Invalidate(FALSE);
+	}
+	return 0;
 }
 
 LRESULT CMainDlg::OnSysKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/) {

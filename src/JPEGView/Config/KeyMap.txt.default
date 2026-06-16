@@ -56,6 +56,7 @@ Shift+Right             IDM_PAN_RIGHT
 Ctrl+Down               IDM_ZOOM_DEC
 Ctrl+Up                 IDM_ZOOM_INC
 Ctrl+A                  IDM_EXCHANGE_PROC_PARAMS
+O                       IDM_SHOW_ORIGINAL
 Ctrl+C                  IDM_COPY
 Ctrl+Shift+C            IDM_COPY_PATH
 C                       IDM_SORT_CREATION_DATE

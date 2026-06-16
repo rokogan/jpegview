@@ -290,6 +290,7 @@
 #define IDM_TOGGLE_FIT_TO_SCREEN_100_PERCENTS	15000		// :KeyMap: toggle between fit to screen and 100 % zoom
 #define IDM_TOGGLE_FILL_WITH_CROP_100_PERCENTS	15001		// :KeyMap: toggle between fill with crop and 100 % zoom
 #define IDM_EXCHANGE_PROC_PARAMS	15100		// :KeyMap: toggle between two sets of image processing parameters
+#define IDM_SHOW_ORIGINAL	15110		// :KeyMap: hold to show the original unprocessed image (release to return)
 #define IDM_PAN_UP	15200		// :KeyMap: pan up
 #define IDM_PAN_DOWN	15201		// :KeyMap: pan down
 #define IDM_PAN_RIGHT	15202		// :KeyMap: pan right
