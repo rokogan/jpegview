@@ -357,6 +357,7 @@ BEGIN
         MENUITEM "Show location on map",        IDM_SHOW_ON_MAP
         MENUITEM "Show filename",               IDM_SHOW_FILENAME
         MENUITEM "Show navigation panel",       IDM_SHOW_NAVPANEL
+        MENUITEM "Pick color (eyedropper)",     IDM_COLOR_PICKER
         MENUITEM SEPARATOR
         MENUITEM "Next image",                  IDM_NEXT
         MENUITEM "Previous image",              IDM_PREV

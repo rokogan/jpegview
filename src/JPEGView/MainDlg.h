@@ -312,6 +312,10 @@ private:
 	bool m_bShowZoomFactor;
 	bool m_bShowOriginal; // hold-to-compare: render the original unprocessed image while a key is held
 	int m_nShowOriginalVK; // virtual-key that activated m_bShowOriginal, so the matching key-up clears it
+	bool m_bColorPickerActive; // color picker (eyedropper) overlay toggle
+	CPoint m_ptCurrentDIBStart; // paint-scope: screen position of the displayed DIB's (0,0)
+	void* m_pCurrentDIBPixels; // paint-scope: the 32bpp BGRA DIB currently on screen (for the color picker)
+	CSize m_sizeCurrentDIB; // paint-scope: size of m_pCurrentDIBPixels
 	bool m_bSpanVirtualDesktop;
 	bool m_bPanMouseCursorSet;
 	bool m_bMouseOn;

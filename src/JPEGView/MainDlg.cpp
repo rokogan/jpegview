@@ -207,6 +207,9 @@ CMainDlg::CMainDlg(bool bForceFullScreen) {
 	m_bCurrentImageInParamDB = false;
 	m_bShowOriginal = false;
 	m_nShowOriginalVK = 0;
+	m_bColorPickerActive = false;
+	m_pCurrentDIBPixels = NULL;
+	m_sizeCurrentDIB = CSize(0, 0);
 	m_bCurrentImageIsSpecialProcessing = false;
 	m_dCurrentInitialLightenShadows = -1;
 
@@ -473,6 +476,8 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 		return 0;
 	}
 
+	m_pCurrentDIBPixels = NULL; // reset the color-picker source; set below only if the image is painted
+
 	// On first paint show 'Open File' dialog if no file passed on command line
 	if (s_bFirst) {
 		s_bFirst = false;
@@ -570,6 +575,10 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 			CPoint ptDIBStart = HelpersGUI::DrawDIB32bppWithBlackBorders(dc, bmInfo, pDIBData, backBrush, m_clientRect, clippedSize, m_DIBOffsets);
 			// The DIB is also blitted into the memory DCs of the panels
 			memDCMgr.BlitImageToMemDC(pDIBData, &bmInfo, ptDIBStart, m_pNavPanelCtl->CurrentBlendingFactor());
+			// Capture the on-screen DIB so the color picker overlay (drawn later this paint) can sample it.
+			m_ptCurrentDIBStart = ptDIBStart;
+			m_pCurrentDIBPixels = pDIBData;
+			m_sizeCurrentDIB = clippedSize;
 		}
 		if (m_bZoomMode) m_offsets = unlimitedOffsets;
 	}
@@ -611,6 +620,28 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 		dc.SetTextColor(CSettingsProvider::This().ColorGUI());
 		HelpersGUI::SelectDefaultFileNameFont(dc);
 		HelpersGUI::DrawTextBordered(dc, buff, GetZoomTextRect(imageProcessingArea), DT_RIGHT);
+	}
+
+	// Color picker (eyedropper): sample the displayed pixel under the cursor and show a swatch + value.
+	if (m_bColorPickerActive && m_pCurrentDIBPixels != NULL) {
+		int px = m_nMouseX - m_ptCurrentDIBStart.x;
+		int py = m_nMouseY - m_ptCurrentDIBStart.y;
+		if (px >= 0 && py >= 0 && px < m_sizeCurrentDIB.cx && py < m_sizeCurrentDIB.cy) {
+			uint32 nColor = ((uint32*)m_pCurrentDIBPixels)[(size_t)py * m_sizeCurrentDIB.cx + px];
+			int r = (nColor >> 16) & 0xFF, g = (nColor >> 8) & 0xFF, b = nColor & 0xFF;
+			TCHAR buff[48];
+			_stprintf_s(buff, 48, _T("#%02X%02X%02X    %d, %d, %d"), r, g, b, r, g, b);
+			int nSwatch = HelpersGUI::ScaleToScreen(16);
+			int nMargin = HelpersGUI::ScaleToScreen(10);
+			CRect rcSwatch(m_clientRect.left + nMargin, m_clientRect.bottom - nMargin - nSwatch,
+				m_clientRect.left + nMargin + nSwatch, m_clientRect.bottom - nMargin);
+			dc.FillSolidRect(&rcSwatch, RGB(r, g, b));
+			dc.FrameRect(&rcSwatch, (HBRUSH)::GetStockObject(WHITE_BRUSH));
+			dc.SetTextColor(CSettingsProvider::This().ColorGUI());
+			HelpersGUI::SelectDefaultFileNameFont(dc);
+			CRect rcText(rcSwatch.right + HelpersGUI::ScaleToScreen(8), rcSwatch.top, m_clientRect.right, rcSwatch.bottom);
+			HelpersGUI::DrawTextBordered(dc, buff, rcText, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+		}
 	}
 
 	// let crop controller and panels paint its stuff
@@ -939,6 +970,7 @@ LRESULT CMainDlg::OnMouseMove(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, B
 	int nOldMouseX = m_nMouseX;
 	m_nMouseX = GET_X_LPARAM(lParam);
 	m_nMouseY = GET_Y_LPARAM(lParam);
+	if (m_bColorPickerActive) Invalidate(FALSE); // refresh the eyedropper readout as the cursor moves
 	if (!m_bDragging) {
 		if (m_startMouse.x == -1 && m_startMouse.y == -1) {
 			m_startMouse.x = m_nMouseX;
@@ -2230,6 +2262,10 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 				sURL.Format(_T("https://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f#map=15/%.6f/%.6f"), dLat, dLon, dLat, dLon);
 				::ShellExecute(this->m_hWnd, _T("open"), sURL, NULL, NULL, SW_SHOWNORMAL);
 			}
+			break;
+		case IDM_COLOR_PICKER:
+			m_bColorPickerActive = !m_bColorPickerActive;
+			Invalidate(FALSE);
 			break;
 	}
 	if (nCommand >= IDM_FIRST_USER_CMD && nCommand <= IDM_LAST_USER_CMD) {

@@ -163,6 +163,7 @@
 #define IDM_SET_WALLPAPER_ORIG 2770		// :KeyMap: Set original image file as desktop wallpaper
 #define IDM_SET_WALLPAPER_DISPLAY 2774		// :KeyMap: Set image as displayed as desktop wallpaper
 #define IDM_SHOW_ON_MAP		2780		// :KeyMap: open the GPS location of the current image in an online map
+#define IDM_COLOR_PICKER	2790		// :KeyMap: toggle the color picker (eyedropper) overlay
 #define IDM_SHOW_FILEINFO   2800		// :KeyMap: toggle show file and EXIF info box in top, left corner
 #define IDM_SHOW_FILENAME	3000		// :KeyMap: toggle show file name on top of screen
 #define IDM_SHOW_NAVPANEL   3100		// :KeyMap: toggle show navigation panel
